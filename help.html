@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XML Jelszint Analizátor - Súgó</title>
+    <!-- Tailwind CSS a modern és reszponzív kinézethez -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Egyedi stílus a jobb olvashatóságért */
+        .help-content h2 {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: 700; /* font-bold */
+            color: #111827; /* text-gray-900 */
+            margin-top: 2rem; /* mt-8 */
+            margin-bottom: 1rem; /* mb-4 */
+            border-bottom: 1px solid #e5e7eb; /* border-b border-gray-200 */
+            padding-bottom: 0.5rem; /* pb-2 */
+        }
+        .help-content h3 {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 600; /* font-semibold */
+            color: #1f2937; /* text-gray-800 */
+            margin-top: 1.5rem; /* mt-6 */
+            margin-bottom: 0.75rem; /* mb-3 */
+        }
+        .help-content h4 {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* font-semibold */
+            color: #374151; /* text-gray-700 */
+            margin-top: 1.25rem; /* mt-5 */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        .help-content p {
+            line-height: 1.75; /* leading-relaxed */
+            color: #4b5563; /* text-gray-600 */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+        .help-content ul, .help-content ol {
+            list-style-position: inside;
+            margin-left: 0.5rem; /* ml-2 */
+            margin-bottom: 1rem; /* mb-4 */
+            color: #4b5563; /* text-gray-600 */
+        }
+        .help-content li {
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        .help-content strong {
+            color: #111827; /* text-gray-900 */
+            font-weight: 600;
+        }
+        .help-content .code-inline {
+            background-color: #e5e7eb; /* bg-gray-200 */
+            color: #1f2937; /* text-gray-800 */
+            padding: 0.125rem 0.375rem; /* px-1.5 py-0.5 */
+            border-radius: 0.25rem; /* rounded */
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <div class="bg-white rounded-2xl shadow-lg p-6 md:p-10 help-content">
+
+            <h2 class="!mt-0">XML Jelszint Analizátor - Használati Útmutató</h2>
+
+            <h3>Bevezetés</h3>
+            <p>
+                Ez az eszköz arra szolgál, hogy a mérőműszerekből exportált, <span class="code-inline">.xml</span> formátumú mérési fájlokat feldolgozza, és azokból egy könnyen áttekinthető, vizuális és táblázatos elemzést készítsen. A program képes több mérés adatait összevonni, statisztikákat számolni, és az eredményeket egy professzionális PDF jegyzőkönyv formájában exportálni.
+            </p>
+
+            <h3>1. Fájlok feltöltése</h3>
+            <ol class="list-decimal">
+                <li>Kattintson a <strong>"Mérési fájlok kiválasztása (.XML)"</strong> gombra.</li>
+                <li>A felugró ablakban válassza ki az összes <span class="code-inline">.xml</span> fájlt, amelyet elemezni szeretne. Egyszerre több fájlt is kijelölhet.</li>
+                <li>A kiválasztás után a program automatikusan megkezdi a fájlok feldolgozását. A folyamat alatt egy töltési animáció látható.</li>
+            </ol>
+
+            <h3>2. Eredmények értelmezése</h3>
+            <p>A feldolgozás után az eredmények két fő részből állnak: egy grafikonból és egy részletes táblázatból.</p>
+            
+            <h4>A Grafikon</h4>
+            <p>A diagram a csatornák átlagos jelszintjét mutatja oszlopdiagram formájában, frekvencia szerint növekvő sorrendben.</p>
+            <ul>
+                <li><strong>Oszlopok:</strong> Az oszlopok magassága az adott csatorna átlagos jelszintjét (dBuV) jelöli. A különböző színek a csatorna típusát jelzik:
+                    <ul class="ml-6 mt-2 list-disc">
+                        <li><span class="font-semibold text-indigo-600">Lila:</span> Analóg csatorna</li>
+                        <li><span class="font-semibold text-green-600">Zöld:</span> DVB-C (digitális) csatorna</li>
+                    </ul>
+                </li>
+                <li><strong>Hibasávok (piros vonalak):</strong> Ha több mérés (fájl) lett feltöltve, az oszlopokon megjelenő piros "T" alakú vonalak a <strong>mérési tartományt</strong> jelzik. A vonal alsó vége a mért minimális jelszintet, a felső vége pedig a maximális jelszintet mutatja. Ez a funkció csak <strong>2 vagy több fájl</strong> feltöltése esetén aktív.</li>
+                <li><strong>Tilt ábrázolása (választható):</strong> A grafikon feletti jelölőnégyzet bepipálásával megjeleníthető egy piros egyenes, amely az első és az utolsó csatorna átlagos jelszintjét köti össze. A jelmagyarázatban ekkor megjelenik a <strong>"Tilt"</strong> értéke, ami a két végpont közötti jelszint-különbséget mutatja.</li>
+            </ul>
+
+            <h4>A Részletes Adatok Táblázat</h4>
+            <p>A táblázat soronként, részletesen tartalmazza a feldolgozott csatornák adatait.</p>
+            <ul>
+                <li><strong>Csatorna:</strong> A mérőműszer által a fájlban rögzített csatornanév.</li>
+                <li><strong>CH:</strong> A frekvencia alapján meghatározott, iparágban használt szabványos csatornaelnevezés (pl. E21, S20).</li>
+                <li><strong>Képvivő frekvencia (MHz):</strong> A csatorna korrigált frekvenciája. Analóg csatornák esetén ez a képvivő frekvenciát jelöli, digitális (DVB-C) csatornák esetén pedig a középfrekvenciát.</li>
+                <li><strong>Átlag MER (dB):</strong> Digitális csatornák esetén a Modulációs Hibaarány (MER) átlagértéke. Analóg csatornáknál ez az érték "N/A".</li>
+                <li><strong>Min/Max Jelszint (dBuV):</strong> A számításhoz felhasznált mérések közül a legkisebb és legnagyobb jelszint. Ez az oszlop <strong>csak 2 vagy több fájl</strong> esetén jelenik meg.</li>
+                <li><strong>Átlag Jelszint (dBuV):</strong> A csatornához tartozó, számított átlagos jelszint.</li>
+                <li><strong>Különbség (dBuV):</strong> A Min és Max Jelszint közötti különbség. A táblázatban a legnagyobb különbség értéke pirossal van kiemelve. Ez az oszlop <strong>csak 2 vagy több fájl</strong> esetén jelenik meg.</li>
+                <li><strong>Mérések:</strong> Azt mutatja, hogy az összes mérésből (jobb oldali szám) hány darabot használt fel a program az átlagszámításhoz (bal oldali szám). Például a <span class="code-inline">5/7</span> azt jelenti, hogy 7 mérésből 5-öt vett figyelembe. Ez az oszlop <strong>csak 2 vagy több fájl</strong> esetén jelenik meg.</li>
+            </ul>
+
+            <h3>3. Számítási módszerek</h3>
+            <p>A program a háttérben több intelligens számítást is végez a pontos és releváns eredmények érdekében.</p>
+            <ul>
+                <li><strong>Átlagszint számítása:</strong> A program a feltöltött fájlok számától függően különböző módszerrel szűri a kiugró értékeket a pontosabb átlagszámítás érdekében:
+                    <ul class="ml-6 mt-2 list-disc">
+                        <li><strong>1 fájl:</strong> Nincs átlagszámítás, a mért érték jelenik meg.</li>
+                        <li><strong>2-3 fájl:</strong> A program az összes mért értéket felhasználja az átlagszámításhoz.</li>
+                        <li><strong>4-6 fájl:</strong> A program eldobja a legkisebb és a legnagyobb mért értéket, és a maradékkal számol átlagot.</li>
+                        <li><strong>7 vagy több fájl:</strong> A program eldobja a két legkisebb és a két legnagyobb mért értéket a még pontosabb átlag érdekében.</li>
+                    </ul>
+                </li>
+                <li><strong>Frekvencia korrekció:</strong> Az analóg csatornák esetében a mérőműszerek gyakran a középfrekvenciát rögzítik. A program ezt automatikusan korrigálja a szabványos képvivő frekvenciára:
+                    <ul class="ml-6 mt-2 list-disc">
+                        <li>Ha a frekvencia <strong>300 MHz alatt</strong> van, <strong>kivon 2,25 MHz-et</strong>.</li>
+                        <li>Ha a frekvencia <strong>300 MHz felett</strong> van, <strong>kivon 2,75 MHz-et</strong>.</li>
+                    </ul>
+                </li>
+                <li><strong>"Tilt" számítása:</strong> A "Tilt" értéke az utolsó (legmagasabb frekvenciájú) csatorna átlagos jelszintjéből kivonva az első (legalacsonyabb frekvenciájú) csatorna átlagos jelszintjét.</li>
+            </ul>
+
+            <h3>4. PDF Exportálás</h3>
+            <p>Az elemzés végén lehetőség van egy formázott PDF jegyzőkönyv generálására.</p>
+            <ol class="list-decimal">
+                <li>Töltse ki a <strong>"Mérési hely"</strong> és a <strong>"Megjegyzés"</strong> mezőket. Ezek az adatok a PDF dokumentum fejlécében fognak megjelenni.</li>
+                <li>Kattintson a <strong>"Mentés PDF-be"</strong> gombra.</li>
+                <li>A böngésző letölti a <span class="code-inline">meresi_jegyzek_[dátum].pdf</span> nevű fájlt, amely tartalmazza a fejlécinformációkat, a grafikont és a részletes táblázatot. A PDF-ben a táblázat oszlopai dinamikusan, a feltöltött fájlok számának megfelelően jelennek meg.</li>
+            </ol>
+
+        </div>
+    </div>
+
+</body>
+</html>
