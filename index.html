@@ -89,6 +89,16 @@
                             <input type="checkbox" id="toggle-outliers-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                             <label for="toggle-outliers-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Szélsőséges értékek szűrése (&gt;30dBuV eltérés)</label>
                         </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="toggle-standard-scale-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="toggle-standard-scale-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Szabványos skála:</label>
+                            <input type="number" id="scale-min-input" value="75" class="ml-2 w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" disabled>
+                            <label for="scale-min-input" class="ml-1 mr-4 block text-sm text-gray-900">dBuV</label>
+                             <div id="narrow-scale-container" class="flex items-center hidden">
+                                <input type="checkbox" id="toggle-narrow-scale-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                <label for="toggle-narrow-scale-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Szűkített (3dBuV)</label>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="bg-gray-50 p-4 rounded-lg">
@@ -146,7 +156,7 @@
     </div>
 
     <script>
-        // Konstansok definiálása a HTML elemekhez
+        // --- VÁLTOZÓK ---
         const fileUpload = document.getElementById('file-upload');
         const fileInfo = document.getElementById('file-info');
         const resultsContainer = document.getElementById('results-container');
@@ -156,15 +166,22 @@
         const meresiHelyInput = document.getElementById('meresi-hely');
         const megjegyzesInput = document.getElementById('megjegyzes');
         const toggleTiltCheckbox = document.getElementById('toggle-tilt-checkbox');
-        const toggleOutliersCheckbox = document.getElementById('toggle-outliers-checkbox'); // ÚJ
+        const toggleOutliersCheckbox = document.getElementById('toggle-outliers-checkbox');
+        const toggleStandardScaleCheckbox = document.getElementById('toggle-standard-scale-checkbox');
+        const scaleMinInput = document.getElementById('scale-min-input');
+        const toggleNarrowScaleCheckbox = document.getElementById('toggle-narrow-scale-checkbox');
+        const narrowScaleContainer = document.getElementById('narrow-scale-container');
         let chartInstance = null;
         let processedDataForPdf = [];
         let firstMeasurementTime = null;
         let lastMeasurementTime = null;
         let totalFileCount = 0;
+        let rawChannelData = []; // Nyers, beolvasott adatok tárolására
 
-        // Fájl feltöltés eseménykezelője
-        fileUpload.addEventListener('change', (event) => {
+        // --- ESEMÉNYKEZELŐK ---
+
+        // Fájl feltöltés
+        fileUpload.addEventListener('change', async (event) => {
             const files = event.target.files;
             totalFileCount = files.length;
             if (totalFileCount > 0) {
@@ -172,51 +189,36 @@
                 resultsContainer.classList.add('hidden');
                 loader.classList.remove('hidden');
                 toggleTiltCheckbox.checked = false; 
-                toggleOutliersCheckbox.checked = false; // ÚJ
-                processFiles(files);
+                toggleOutliersCheckbox.checked = false;
+                toggleStandardScaleCheckbox.checked = false;
+                scaleMinInput.disabled = true;
+                toggleNarrowScaleCheckbox.checked = false;
+                narrowScaleContainer.classList.add('hidden');
+                await processFiles(files);
             } else {
                 fileInfo.textContent = 'Nincsenek fájlok kiválasztva.';
             }
         });
 
-        // Eseménykezelő a Tilt checkboxhoz
-        toggleTiltCheckbox.addEventListener('change', () => {
-            if (processedDataForPdf.length > 0) {
-                renderChart(processedDataForPdf);
+        // Checkbox-ok változása
+        toggleTiltCheckbox.addEventListener('change', () => { if (rawChannelData.length > 0) analyzeAndRender(); });
+        toggleOutliersCheckbox.addEventListener('change', () => { if (rawChannelData.length > 0) analyzeAndRender(); });
+        scaleMinInput.addEventListener('input', () => { if (rawChannelData.length > 0 && toggleStandardScaleCheckbox.checked) analyzeAndRender(); });
+        toggleNarrowScaleCheckbox.addEventListener('change', () => { if (rawChannelData.length > 0) analyzeAndRender(); });
+
+        toggleStandardScaleCheckbox.addEventListener('change', () => {
+            scaleMinInput.disabled = !toggleStandardScaleCheckbox.checked;
+            if (toggleStandardScaleCheckbox.checked) {
+                narrowScaleContainer.classList.remove('hidden');
+            } else {
+                narrowScaleContainer.classList.add('hidden');
+                toggleNarrowScaleCheckbox.checked = false;
             }
+            if (rawChannelData.length > 0) analyzeAndRender();
         });
 
-        // ÚJ: Eseménykezelő a szélsőséges értékeket szűrő checkboxhoz
-        toggleOutliersCheckbox.addEventListener('change', () => {
-            if (processedDataForPdf.length > 0) {
-                renderChart(processedDataForPdf);
-            }
-        });
 
-
-        // Dátum és idő formázása magyar formátumra
-        function formatDateTime(date) {
-            if (!date) return 'N/A';
-            return date.toLocaleString('hu-HU', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-        }
-
-        // Ékezetes karakterek cseréje a PDF kompatibilitás érdekében
-        function replaceHungarianChars(str) {
-            if (typeof str !== 'string') return str;
-            return str.replace(/ő/g, 'ö')
-                      .replace(/ű/g, 'ü')
-                      .replace(/Ő/g, 'Ö')
-                      .replace(/Ű/g, 'Ü');
-        }
-
-        // PDF generálás eseménykezelője
+        // PDF generálás
         savePdfButton.addEventListener('click', async () => {
             const { jsPDF } = window.jspdf;
             const graphSection = document.getElementById('graph-section');
@@ -238,12 +240,7 @@
             button.disabled = true;
 
             try {
-                const pdf = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'mm',
-                    format: 'a4'
-                });
-
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const margin = 10;
                 const contentWidth = pdfWidth - margin * 2;
@@ -271,7 +268,6 @@
                 pdf.text(replaceHungarianChars(lastMeasurementText), margin, lastY);
                 lastY += 10;
                 
-                // Teljes átlag kiírása a PDF-re
                 const totalAvgLevelSumPdf = processedDataForPdf.reduce((sum, ch) => sum + ch.avgLevel, 0);
                 const overallAvgLevelPdf = processedDataForPdf.length > 0 ? totalAvgLevelSumPdf / processedDataForPdf.length : 0;
                 const overallAvgText = `Teljes atlagos jelszint: ${overallAvgLevelPdf.toFixed(1)} dBuV`;
@@ -279,7 +275,6 @@
                 pdf.setFontSize(12);
                 pdf.text(replaceHungarianChars(overallAvgText), pdf.internal.pageSize.getWidth() / 2, lastY, { align: 'center' });
                 lastY += 10;
-
 
                 const graphCanvas = await html2canvas(graphSection, { scale: 4, logging: false, useCORS: true });
                 const graphImgData = graphCanvas.toDataURL('image/jpeg', 0.90);
@@ -318,7 +313,6 @@
                             if (key === 'deviationFromTotalAvg') {
                                  return (value > 0 ? '+' : '') + value.toFixed(1);
                             }
-                            // A többi számértéket 2 tizedesjegyre kerekítjük
                             return value.toFixed(2);
                         }
                         if (key === 'avgMer' && value === null) return 'N/A';
@@ -355,9 +349,9 @@
 
                         if (key === 'deviationFromTotalAvg') {
                             if (rowData.deviationFromTotalAvg > 0) {
-                                data.cell.styles.textColor = [22, 163, 74]; // Zöld
+                                data.cell.styles.textColor = [22, 163, 74];
                             } else if (rowData.deviationFromTotalAvg < 0) {
-                                data.cell.styles.textColor = [220, 38, 38]; // Piros
+                                data.cell.styles.textColor = [220, 38, 38];
                             }
                             data.cell.styles.fontStyle = 'bold';
                         }
@@ -381,14 +375,12 @@
             }
         });
 
-        // Fájlok beolvasása és feldolgozása
+
+        // --- FŐ FUNKCIÓK ---
+
         async function processFiles(files) {
-            let allData = [];
-
-            const sortedFiles = Array.from(files).sort((a, b) =>
-                a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
-            );
-
+            rawChannelData = [];
+            const sortedFiles = Array.from(files).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
             const fileReadPromises = sortedFiles.map(file => readFileAsText(file));
 
             try {
@@ -399,27 +391,13 @@
                     const content = fileContents[i];
                     const xmlDoc = parser.parseFromString(content, "text/xml");
                     const { channels, channelTimestamps } = extractDataFromXml(xmlDoc);
-
-                    allData.push(...channels);
-
+                    rawChannelData.push(...channels);
                     if (channelTimestamps.length > 0) {
-                        if (i === 0) {
-                            firstMeasurementTime = channelTimestamps[0];
-                        }
-                        if (i === fileContents.length - 1) {
-                            lastMeasurementTime = channelTimestamps[channelTimestamps.length - 1];
-                        }
+                        if (i === 0) firstMeasurementTime = channelTimestamps[0];
+                        if (i === fileContents.length - 1) lastMeasurementTime = channelTimestamps[channelTimestamps.length - 1];
                     }
                 }
-
-                const processedData = processChannelData(allData, totalFileCount);
-                processedDataForPdf = processedData;
-
-                renderChart(processedData);
-                renderTable(processedData, totalFileCount);
-
-                resultsContainer.classList.remove('hidden');
-
+                analyzeAndRender();
             } catch (error) {
                 console.error("Hiba a fájlok feldolgozása során:", error);
                 fileInfo.textContent = "Hiba történt a fájlok feldolgozása közben. Kérjük, ellenőrizze a fájlokat.";
@@ -428,196 +406,19 @@
             }
         }
 
-        // Fájl beolvasása szövegként
-        function readFileAsText(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = () => reject(reader.error);
-                reader.readAsText(file);
-            });
+        function analyzeAndRender() {
+            const processedData = processChannelData(rawChannelData, totalFileCount);
+            processedDataForPdf = processedData;
+            renderChart(processedData);
+            renderTable(processedData, totalFileCount);
+            resultsContainer.classList.remove('hidden');
         }
 
-        // Adatok kinyerése az XML-ből
-        function extractDataFromXml(xmlDoc) {
-            const data = [];
-            const channelTimestamps = [];
-
-            const channels = xmlDoc.querySelectorAll('CHANNEL');
-            channels.forEach(channel => {
-                const dateStr = channel.getAttribute('date');
-                const timeStr = channel.getAttribute('time');
-                if(dateStr && timeStr) {
-                    const isoString = `${dateStr}T${timeStr}Z`;
-                    const parsedDate = new Date(isoString);
-                    if (!isNaN(parsedDate)) {
-                        channelTimestamps.push(parsedDate);
-                    }
-                }
-
-                const statusElement = channel.querySelector('STATUS');
-                const lockedStatus = statusElement ? statusElement.getAttribute('locked') : null;
-
-                if (lockedStatus !== 'LOCKED') {
-                    return;
-                }
-
-                const channelName = channel.getAttribute('name');
-                const frequency = parseFloat(channel.getAttribute('frequency'));
-                let level = null;
-                let type = 'ANALOG';
-                let mer = null;
-
-                if (channel.querySelector('DVB-C')) {
-                    type = 'DVBC';
-                    const merElement = channel.querySelector('MEASURES > MER');
-                    if (merElement) {
-                        mer = parseFloat(merElement.getAttribute('value'));
-                    }
-                }
-
-                const levelElement = channel.querySelector('MEASURES > LEVEL, MEASURES > POWER');
-
-                if (levelElement) {
-                    level = parseFloat(levelElement.getAttribute('value'));
-                }
-
-                if (channelName && !isNaN(level) && !isNaN(frequency)) {
-                    data.push({ channel: channelName, level: level, frequency: frequency, type: type, mer: mer });
-                }
-            });
-            return { channels: data, channelTimestamps: channelTimestamps };
-        }
-
-        // Szabványos csatornanév meghatározása
-        function getStandardChannelName(freqMHz) {
-            // Magyarországon használt kábel TV kiosztás alapján (frekvencia.hu)
-            // A határok a szabványos képvivő frekvenciák közötti felezőpontok.
-            const channels = [
-                // VHF I. sáv (7 MHz)
-                { name: 'E2', start: 44.75, end: 51.75 },   // Carrier: 48.25
-                { name: 'E3', start: 51.75, end: 58.75 },   // Carrier: 55.25
-                { name: 'E4', start: 58.75, end: 65.75 },   // Carrier: 62.25
-                // Mid-band (7 MHz)
-                { name: 'S2', start: 108.75, end: 115.75 }, // Carrier: 112.25
-                { name: 'S3', start: 115.75, end: 122.75 }, // Carrier: 119.25
-                { name: 'S4', start: 122.75, end: 129.75 }, // Carrier: 126.25
-                { name: 'S5', start: 129.75, end: 136.75 }, // Carrier: 133.25
-                { name: 'S6', start: 136.75, end: 143.75 }, // Carrier: 140.25
-                { name: 'S7', start: 143.75, end: 150.75 }, // Carrier: 147.25
-                { name: 'S8', start: 150.75, end: 157.75 }, // Carrier: 154.25
-                { name: 'S9', start: 157.75, end: 164.75 }, // Carrier: 161.25
-                { name: 'S10', start: 164.75, end: 171.75 },// Carrier: 168.25
-                // VHF III. sáv (7 MHz)
-                { name: 'E5', start: 171.75, end: 178.75 }, // Carrier: 175.25
-                { name: 'E6', start: 178.75, end: 185.75 }, // Carrier: 182.25
-                { name: 'E7', start: 185.75, end: 192.75 }, // Carrier: 189.25
-                { name: 'E8', start: 192.75, end: 199.75 }, // Carrier: 196.25
-                { name: 'E9', start: 199.75, end: 206.75 }, // Carrier: 203.25
-                { name: 'E10', start: 206.75, end: 213.75 },// Carrier: 210.25
-                { name: 'E11', start: 213.75, end: 220.75 },// Carrier: 217.25
-                { name: 'E12', start: 220.75, end: 227.75 },// Carrier: 224.25
-                // Super-band (7 MHz)
-                { name: 'S11', start: 227.75, end: 234.75 },// Carrier: 231.25
-                { name: 'S12', start: 234.75, end: 241.75 },// Carrier: 238.25
-                { name: 'S13', start: 241.75, end: 248.75 },// Carrier: 245.25
-                { name: 'S14', start: 248.75, end: 255.75 },// Carrier: 252.25
-                { name: 'S15', start: 255.75, end: 262.75 },// Carrier: 259.25
-                { name: 'S16', start: 262.75, end: 269.75 },// Carrier: 266.25
-                { name: 'S17', start: 269.75, end: 276.75 },// Carrier: 273.25
-                { name: 'S18', start: 276.75, end: 283.75 },// Carrier: 280.25
-                { name: 'S19', start: 283.75, end: 290.75 },// Carrier: 287.25
-                { name: 'S20', start: 290.75, end: 297.75 },// Carrier: 294.25
-                // Hyper-band (8 MHz) - váltás 302 MHz-nél
-                { name: 'S21', start: 298.75, end: 306.75 },// Carrier: 303.25
-                { name: 'S22', start: 306.75, end: 314.75 },// Carrier: 311.25
-                { name: 'S23', start: 314.75, end: 322.75 },// Carrier: 319.25
-                { name: 'S24', start: 322.75, end: 330.75 },// Carrier: 327.25
-                { name: 'S25', start: 330.75, end: 338.75 },// Carrier: 335.25
-                { name: 'S26', start: 338.75, end: 346.75 },// Carrier: 343.25
-                { name: 'S27', start: 346.75, end: 354.75 },// Carrier: 351.25
-                { name: 'S28', start: 354.75, end: 362.75 },// Carrier: 359.25
-                { name: 'S29', start: 362.75, end: 370.75 },// Carrier: 367.25
-                { name: 'S30', start: 370.75, end: 378.75 },// Carrier: 375.25
-                { name: 'S31', start: 378.75, end: 386.75 },// Carrier: 383.25
-                { name: 'S32', start: 386.75, end: 394.75 },// Carrier: 391.25
-                { name: 'S33', start: 394.75, end: 402.75 },// Carrier: 399.25
-                { name: 'S34', start: 402.75, end: 410.75 },// Carrier: 407.25
-                { name: 'S35', start: 410.75, end: 418.75 },// Carrier: 415.25
-                { name: 'S36', start: 418.75, end: 426.75 },// Carrier: 423.25
-                { name: 'S37', start: 426.75, end: 434.75 },// Carrier: 431.25
-                { name: 'S38', start: 434.75, end: 442.75 },// Carrier: 439.25
-                { name: 'S39', start: 442.75, end: 450.75 },// Carrier: 447.25
-                { name: 'S40', start: 450.75, end: 458.75 },// Carrier: 455.25
-                { name: 'S41', start: 458.75, end: 466.75 },// Carrier: 463.25
-                // UHF (8 MHz)
-                { name: 'E21', start: 466.75, end: 474.75 },// Carrier: 471.25
-                { name: 'E22', start: 474.75, end: 482.75 },// Carrier: 479.25
-                { name: 'E23', start: 482.75, end: 490.75 },// Carrier: 487.25
-                { name: 'E24', start: 490.75, end: 498.75 },// Carrier: 495.25
-                { name: 'E25', start: 498.75, end: 506.75 },// Carrier: 503.25
-                { name: 'E26', start: 506.75, end: 514.75 },// Carrier: 511.25
-                { name: 'E27', start: 514.75, end: 522.75 },// Carrier: 519.25
-                { name: 'E28', start: 522.75, end: 530.75 },// Carrier: 527.25
-                { name: 'E29', start: 530.75, end: 538.75 },// Carrier: 535.25
-                { name: 'E30', start: 538.75, end: 546.75 },// Carrier: 543.25
-                { name: 'E31', start: 546.75, end: 554.75 },// Carrier: 551.25
-                { name: 'E32', start: 554.75, end: 562.75 },// Carrier: 559.25
-                { name: 'E33', start: 562.75, end: 570.75 },// Carrier: 567.25
-                { name: 'E34', start: 570.75, end: 578.75 },// Carrier: 575.25
-                { name: 'E35', start: 578.75, end: 586.75 },// Carrier: 583.25
-                { name: 'E36', start: 586.75, end: 594.75 },// Carrier: 591.25
-                { name: 'E37', start: 594.75, end: 602.75 },// Carrier: 599.25
-                { name: 'E38', start: 602.75, end: 610.75 },// Carrier: 607.25
-                { name: 'E39', start: 610.75, end: 618.75 },// Carrier: 615.25
-                { name: 'E40', start: 618.75, end: 626.75 },// Carrier: 623.25
-                { name: 'E41', start: 626.75, end: 634.75 },// Carrier: 631.25
-                { name: 'E42', start: 634.75, end: 642.75 },// Carrier: 639.25
-                { name: 'E43', start: 642.75, end: 650.75 },// Carrier: 647.25
-                { name: 'E44', start: 650.75, end: 658.75 },// Carrier: 655.25
-                { name: 'E45', start: 658.75, end: 666.75 },// Carrier: 663.25
-                { name: 'E46', start: 666.75, end: 674.75 },// Carrier: 671.25
-                { name: 'E47', start: 674.75, end: 682.75 },// Carrier: 679.25
-                { name: 'E48', start: 682.75, end: 690.75 },// Carrier: 687.25
-                { name: 'E49', start: 690.75, end: 698.75 },// Carrier: 695.25
-                { name: 'E50', start: 698.75, end: 706.75 },// Carrier: 703.25
-                { name: 'E51', start: 706.75, end: 714.75 },// Carrier: 711.25
-                { name: 'E52', start: 714.75, end: 722.75 },// Carrier: 719.25
-                { name: 'E53', start: 722.75, end: 730.75 },// Carrier: 727.25
-                { name: 'E54', start: 730.75, end: 738.75 },// Carrier: 735.25
-                { name: 'E55', start: 738.75, end: 746.75 },// Carrier: 743.25
-                { name: 'E56', start: 746.75, end: 754.75 },// Carrier: 751.25
-                { name: 'E57', start: 754.75, end: 762.75 },// Carrier: 759.25
-                { name: 'E58', start: 762.75, end: 770.75 },// Carrier: 767.25
-                { name: 'E59', start: 770.75, end: 778.75 },// Carrier: 775.25
-                { name: 'E60', start: 778.75, end: 786.75 },// Carrier: 783.25
-                { name: 'E61', start: 786.75, end: 794.75 },// Carrier: 791.25
-                { name: 'E62', start: 794.75, end: 802.75 },// Carrier: 799.25
-                { name: 'E63', start: 802.75, end: 810.75 },// Carrier: 807.25
-                { name: 'E64', start: 810.75, end: 818.75 },// Carrier: 815.25
-                { name: 'E65', start: 818.75, end: 826.75 },// Carrier: 823.25
-                { name: 'E66', start: 826.75, end: 834.75 },// Carrier: 831.25
-                { name: 'E67', start: 834.75, end: 842.75 },// Carrier: 839.25
-                { name: 'E68', start: 842.75, end: 850.75 },// Carrier: 847.25
-                { name: 'E69', start: 850.75, end: 858.75 } // Carrier: 855.25
-            ];
-            
-            const found = channels.find(ch => freqMHz >= ch.start && freqMHz < ch.end);
-            return found || null;
-        }
-
-        // --- MÓDOSÍTOTT Csatorna adatok feldolgozása ---
         function processChannelData(allData, fileCount) {
             const channelStats = {};
-
             allData.forEach(({ channel, level, frequency, type, mer }) => {
                 if (!channelStats[channel]) {
-                    channelStats[channel] = {
-                        levels: [],
-                        mers: [],
-                        frequency: frequency,
-                        type: type
-                    };
+                    channelStats[channel] = { levels: [], mers: [], frequency: frequency, type: type };
                 }
                 channelStats[channel].levels.push(level);
                 if (type === 'DVBC' && mer !== null && !isNaN(mer)) {
@@ -629,259 +430,110 @@
                 const stats = channelStats[channelName];
                 let levelsToProcess = [...stats.levels];
                 const originalCount = levelsToProcess.length;
-                let avgLevel, minLevel, maxLevel;
-
+                
                 if (fileCount >= 7 && levelsToProcess.length > 4) {
-                    levelsToProcess.sort((a, b) => a - b);
-                    levelsToProcess.pop();
-                    levelsToProcess.pop();
-                    levelsToProcess.shift();
-                    levelsToProcess.shift();
+                    levelsToProcess.sort((a, b) => a - b).splice(0, 2);
+                    levelsToProcess.splice(-2, 2);
                 } else if (fileCount >= 4 && levelsToProcess.length > 2) {
-                    levelsToProcess.sort((a, b) => a - b);
+                    levelsToProcess.sort((a, b) => a - b).shift();
                     levelsToProcess.pop();
-                    levelsToProcess.shift();
                 }
 
                 const usedCount = levelsToProcess.length;
+                const sourceLevels = usedCount > 0 ? levelsToProcess : stats.levels;
+                const sumLevel = sourceLevels.reduce((a, b) => a + b, 0);
+                const avgLevel = sourceLevels.length > 0 ? sumLevel / sourceLevels.length : 0;
+                const minLevel = sourceLevels.length > 0 ? Math.min(...sourceLevels) : 0;
+                const maxLevel = sourceLevels.length > 0 ? Math.max(...sourceLevels) : 0;
 
-                if (levelsToProcess.length > 0) {
-                    const sumLevel = levelsToProcess.reduce((a, b) => a + b, 0);
-                    avgLevel = sumLevel / levelsToProcess.length;
-                    minLevel = Math.min(...levelsToProcess);
-                    maxLevel = Math.max(...levelsToProcess);
-                } else {
-                    const sumLevel = stats.levels.reduce((a, b) => a + b, 0);
-                    avgLevel = stats.levels.length > 0 ? sumLevel / stats.levels.length : 0;
-                    minLevel = stats.levels.length > 0 ? Math.min(...stats.levels) : 0;
-                    maxLevel = stats.levels.length > 0 ? Math.max(...stats.levels) : 0;
-                }
+                const sumMer = stats.mers.reduce((a, b) => a + b, 0);
+                const avgMer = stats.mers.length > 0 ? parseFloat((sumMer / stats.mers.length).toFixed(2)) : null;
+                const displayFrequency = stats.type === 'ANALOG' ? (stats.frequency - (stats.frequency < 298 ? 7 : 8) / 2 + 1.25) : stats.frequency;
+                const standardChannelName = getStandardChannelName(displayFrequency)?.name || 'N/A';
 
-                let avgMer = null;
-                if (stats.mers.length > 0) {
-                    const sumMer = stats.mers.reduce((a, b) => a + b, 0);
-                    avgMer = parseFloat((sumMer / stats.mers.length).toFixed(2));
-                }
-                
-                const levelDifference = maxLevel - minLevel;
-                
-                let displayFrequency = stats.frequency;
-                let lookupFrequency = stats.frequency;
-
-                if (stats.type === 'ANALOG') {
-                    // Analóg esetén a képvivőt számoljuk ki a középfrekvenciából
-                    const centerFrequency = stats.frequency;
-                    const channelWidth = centerFrequency < 298 ? 7 : 8;
-                    displayFrequency = centerFrequency - (channelWidth / 2) + 1.25;
-                    lookupFrequency = displayFrequency; // A csatornanév kereséséhez is a képvivőt használjuk
-                }
-
-                const standardChannelName = getStandardChannelName(lookupFrequency)?.name || 'N/A';
-
-                return {
-                    name: channelName,
-                    avgLevel: parseFloat(avgLevel.toFixed(2)),
-                    minLevel: minLevel,
-                    maxLevel: maxLevel,
-                    levelDifference: parseFloat(levelDifference.toFixed(2)),
-                    count: originalCount,
-                    measurementsDisplay: `${usedCount}/${originalCount}`,
-                    frequency: stats.frequency,
-                    displayFrequency: displayFrequency,
-                    standardChannelName: standardChannelName,
-                    type: stats.type,
-                    avgMer: avgMer
-                };
+                return { name: channelName, avgLevel: parseFloat(avgLevel.toFixed(2)), minLevel: minLevel, maxLevel: maxLevel, levelDifference: parseFloat((maxLevel - minLevel).toFixed(2)), count: originalCount, measurementsDisplay: `${usedCount}/${originalCount}`, frequency: stats.frequency, displayFrequency: displayFrequency, standardChannelName: standardChannelName, type: stats.type, avgMer: avgMer };
             });
             
-            // Teljes átlag és eltérés számítása
-            if (processedChannels.length > 0) {
-                const totalAvgLevelSum = processedChannels.reduce((sum, ch) => sum + ch.avgLevel, 0);
-                const overallAvgLevel = totalAvgLevelSum / processedChannels.length;
-
-                processedChannels = processedChannels.map(ch => {
-                    ch.deviationFromTotalAvg = ch.avgLevel - overallAvgLevel;
-                    return ch;
-                });
+            if (toggleOutliersCheckbox.checked && processedChannels.length > 0) {
+                 const originalAvgSum = processedChannels.reduce((sum, ch) => sum + ch.avgLevel, 0);
+                 const originalOverallAvg = originalAvgSum / processedChannels.length;
+                 processedChannels = processedChannels.filter(ch => Math.abs(ch.avgLevel - originalOverallAvg) < 30);
             }
 
+            if (processedChannels.length > 0) {
+                const finalAvgSum = processedChannels.reduce((sum, ch) => sum + ch.avgLevel, 0);
+                const finalOverallAvg = finalAvgSum / processedChannels.length;
+                processedChannels.forEach(ch => ch.deviationFromTotalAvg = ch.avgLevel - finalOverallAvg);
+            }
 
             processedChannels.sort((a, b) => a.frequency - b.frequency);
-
             return processedChannels;
         }
 
-        // Egyedi plugin a hibasávok (mérési tartomány) rajzolásához
-        const errorBarPlugin = {
-            id: 'errorBarPlugin',
-            afterDraw(chart) {
-                if (totalFileCount <= 1) return;
 
-                const { ctx, scales: { x, y } } = chart;
+        // --- VIZUALIZÁCIÓS FUNKCIÓK ---
 
-                ctx.save();
-                ctx.lineWidth = 1.5;
-                ctx.strokeStyle = 'rgba(220, 38, 38, 0.7)';
-
-                chart.data.datasets.forEach((dataset, i) => {
-                    if (dataset.type === 'line') return;
-                    const meta = chart.getDatasetMeta(i);
-                    const customData = dataset.customData;
-                    if (!customData) return;
-
-                    for (let j = 0; j < meta.data.length; j++) {
-                        const bar = meta.data[j];
-                        const dataPoint = customData[j];
-
-                        const xPos = bar.x;
-                        const yMin = y.getPixelForValue(dataPoint.minLevel);
-                        const yMax = y.getPixelForValue(dataPoint.maxLevel);
-                        const whiskerWidth = bar.width * 0.3;
-
-                        ctx.beginPath();
-                        ctx.moveTo(xPos, yMin);
-                        ctx.lineTo(xPos, yMax);
-                        ctx.stroke();
-
-                        ctx.beginPath();
-                        ctx.moveTo(xPos - whiskerWidth / 2, yMax);
-                        ctx.lineTo(xPos + whiskerWidth / 2, yMax);
-                        ctx.stroke();
-
-                        ctx.beginPath();
-                        ctx.moveTo(xPos - whiskerWidth / 2, yMin);
-                        ctx.lineTo(xPos + whiskerWidth / 2, yMin);
-                        ctx.stroke();
-                    }
-                });
-                ctx.restore();
-            }
-        };
-
-        // --- MÓDOSÍTOTT Grafikon renderelése ---
         function renderChart(processedData) {
             const ctx = document.getElementById('signalChart').getContext('2d');
             const tiltLegendContainer = document.getElementById('tilt-legend-container');
             const tiltLegendElement = document.getElementById('tilt-legend');
             const showTilt = toggleTiltCheckbox.checked;
-            const hideOutliers = toggleOutliersCheckbox.checked; // ÚJ
+            const showStandardScale = toggleStandardScaleCheckbox.checked;
+            const isNarrowScale = toggleNarrowScaleCheckbox.checked;
+            const scaleMin = parseFloat(scaleMinInput.value);
 
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
+            if (chartInstance) chartInstance.destroy();
             
-            // A grafikonhoz használt adatok szűrése, ha szükséges
-            let chartData = processedData;
-            if (hideOutliers && processedData.length > 0) {
-                 const totalAvgLevelSum = processedData.reduce((sum, ch) => sum + ch.avgLevel, 0);
-                 const overallAvgLevel = totalAvgLevelSum / processedData.length;
-                 chartData = processedData.filter(ch => Math.abs(ch.avgLevel - overallAvgLevel) < 30);
-            }
-
-
             const analogColor = 'rgba(79, 70, 229, 0.8)';
             const dvbcColor = 'rgba(34, 197, 94, 0.8)';
             
-            const datasets = [{
-                label: 'Átlagos jelszint (dBuV)',
-                data: chartData.map(ch => ch.avgLevel),
-                customData: chartData,
-                backgroundColor: chartData.map(ch => ch.type === 'DVBC' ? dvbcColor : analogColor),
-                borderColor: chartData.map(ch => ch.type === 'DVBC' ? 'rgb(22, 163, 74)' : 'rgb(67, 56, 202)'),
-                borderWidth: 1,
-                order: 2
-            }];
+            const datasets = [{ label: 'Átlagos jelszint (dBuV)', data: processedData.map(ch => ch.avgLevel), customData: processedData, backgroundColor: processedData.map(ch => ch.type === 'DVBC' ? dvbcColor : analogColor), borderColor: processedData.map(ch => ch.type === 'DVBC' ? 'rgb(22, 163, 74)' : 'rgb(67, 56, 202)'), borderWidth: 1, order: 2 }];
 
-            if (showTilt && chartData.length > 1) {
-                const firstLevel = chartData[0].avgLevel;
-                const lastLevel = chartData[chartData.length - 1].avgLevel;
+            if (showTilt && processedData.length > 1) {
+                const firstLevel = processedData[0].avgLevel;
+                const lastLevel = processedData[processedData.length - 1].avgLevel;
                 const tilt = lastLevel - firstLevel;
-                
-                const lineData = new Array(chartData.length).fill(null);
+                const lineData = new Array(processedData.length).fill(null);
                 lineData[0] = firstLevel;
                 lineData[lineData.length - 1] = lastLevel;
-                
                 tiltLegendContainer.style.display = 'flex';
                 tiltLegendElement.textContent = `Tilt: ${tilt.toFixed(1)} dBuV`; 
-
-                datasets.push({
-                    type: 'line',
-                    label: 'Összekötő egyenes',
-                    data: lineData,
-                    borderColor: 'rgba(220, 38, 38, 0.9)',
-                    borderWidth: 2.5,
-                    fill: false,
-                    tension: 0,
-                    pointRadius: 5,
-                    pointBackgroundColor: 'rgba(220, 38, 38, 1)',
-                    spanGaps: true, 
-                    order: 1
-                });
+                datasets.push({ type: 'line', label: 'Összekötő egyenes', data: lineData, borderColor: 'rgba(220, 38, 38, 0.9)', borderWidth: 2.5, fill: false, tension: 0, pointRadius: 5, pointBackgroundColor: 'rgba(220, 38, 38, 1)', spanGaps: true, order: 1 });
             } else {
                  tiltLegendContainer.style.display = 'none';
+            }
+            
+            const y_scale_options = { title: { display: true, text: 'Jelszint (dBuV)', font: { size: 14 } } };
+            if (showStandardScale && !isNaN(scaleMin)) {
+                const scaleRange = isNarrowScale ? 3 : 6;
+                y_scale_options.min = scaleMin;
+                y_scale_options.max = scaleMin + scaleRange;
+            } else {
+                 y_scale_options.grace = '10%'; 
             }
 
             chartInstance = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: chartData.map(ch => ch.name),
-                    datasets: datasets
-                },
+                data: { labels: processedData.map(ch => ch.name), datasets: datasets },
                 plugins: [errorBarPlugin, ChartDataLabels],
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
+                    responsive: true, maintainAspectRatio: true,
                     scales: {
-                        y: {
-                            beginAtZero: false,
-                            grace: '100%',
-                            title: {
-                                display: true,
-                                text: 'Jelszint (dBuV)',
-                                font: { size: 14 }
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Csatorna (Frekvencia szerint rendezve)',
-                                font: { size: 14 }
-                            }
-                        }
+                        y: y_scale_options,
+                        x: { title: { display: true, text: 'Csatorna (Frekvencia szerint rendezve)', font: { size: 14 } } }
                     },
                     plugins: {
-                        legend: {
-                            display: false
-                        },
-                        datalabels: {
-                            display: (context) => context.datasetIndex === 0,
-                            rotation: -90,
-                            anchor: 'end',
-                            align: 'top',
-                            offset: 20,
-                            color: '#374151',
-                            font: {
-                                weight: 'bold',
-                                size: 13
-                            },
-                            formatter: (value) => value.toFixed(1)
-                        },
+                        legend: { display: false },
+                        datalabels: { display: (context) => context.datasetIndex === 0, rotation: -90, anchor: 'end', align: 'top', offset: 20, color: '#374151', font: { weight: 'bold', size: 13 }, formatter: (value) => value.toFixed(1) },
                         tooltip: {
                             filter: (tooltipItem) => tooltipItem.datasetIndex === 0,
                             callbacks: {
                                 label: function(context) {
-                                    const channelData = chartData[context.dataIndex]; // Módosítva
-                                    const tooltipLines = [];
-                                    tooltipLines.push(`Átlag: ${channelData.avgLevel} dBuV`);
-                                    if (channelData.type === 'DVBC' && channelData.avgMer !== null) {
-                                        tooltipLines.push(`Átlag MER: ${channelData.avgMer} dB`);
-                                    }
-                                    if (totalFileCount > 1) {
-                                        tooltipLines.push(`Min: ${channelData.minLevel} dBuV`);
-                                        tooltipLines.push(`Max: ${channelData.maxLevel} dBuV`);
-                                        tooltipLines.push(`Különbség: ${channelData.levelDifference.toFixed(2)} dBuV`);
-                                    }
-                                    return tooltipLines;
+                                    const channelData = processedData[context.dataIndex];
+                                    let lines = [`Átlag: ${channelData.avgLevel} dBuV`];
+                                    if (channelData.type === 'DVBC' && channelData.avgMer !== null) lines.push(`Átlag MER: ${channelData.avgMer} dB`);
+                                    if (totalFileCount > 1) lines.push(`Min: ${channelData.minLevel} dBuV`, `Max: ${channelData.maxLevel} dBuV`, `Különbség: ${channelData.levelDifference.toFixed(2)} dBuV`);
+                                    return lines;
                                 }
                             }
                         }
@@ -890,12 +542,10 @@
             });
         }
 
-        // --- MÓDOSÍTOTT Táblázat renderelése ---
         function renderTable(processedData, fileCount) {
             const showDifferenceColumn = fileCount > 1;
             const showMeasurementsColumn = fileCount > 1;
             const maxDifference = showDifferenceColumn && processedData.length > 0 ? Math.max(...processedData.map(ch => ch.levelDifference)) : 0;
-            
             const totalAvgLevelSum = processedData.reduce((sum, ch) => sum + ch.avgLevel, 0);
             const overallAvgLevel = processedData.length > 0 ? totalAvgLevelSum / processedData.length : 0;
 
@@ -926,40 +576,29 @@
                 let merClass = 'text-gray-700';
                 if (ch.type === 'DVBC' && ch.avgMer !== null) {
                     merContent = ch.avgMer.toFixed(2);
-                    if (ch.avgMer < 40) {
-                        merClass = 'text-orange-500 font-bold';
-                    }
+                    if (ch.avgMer < 40) merClass = 'text-orange-500 font-bold';
                 }
-                
                 const differenceClass = showDifferenceColumn && ch.levelDifference === maxDifference ? 'text-red-600 font-bold' : 'text-gray-700';
-                
                 const deviation = ch.deviationFromTotalAvg;
                 const deviationText = (deviation > 0 ? '+' : '') + deviation.toFixed(1);
                 const deviationClass = deviation > 0 ? 'text-green-600' : 'text-red-600';
 
-                tableHTML += `
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${ch.name}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.standardChannelName}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.displayFrequency.toFixed(2)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm ${merClass}">${merContent}</td>
-                        ${showDifferenceColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.minLevel.toFixed(2)}</td>` : ''}
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">${ch.avgLevel.toFixed(2)}</td>
-                        ${showDifferenceColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.maxLevel.toFixed(2)}</td>` : ''}
-                        ${showDifferenceColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm ${differenceClass}">${ch.levelDifference.toFixed(2)}</td>` : ''}
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${deviationClass}">${deviationText}</td>
-                        ${showMeasurementsColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.measurementsDisplay}</td>` : ''}
-                    </tr>
-                `;
+                tableHTML += `<tr><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${ch.name}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.standardChannelName}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.displayFrequency.toFixed(2)}</td><td class="px-6 py-4 whitespace-nowrap text-sm ${merClass}">${merContent}</td>${showDifferenceColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.minLevel.toFixed(2)}</td>` : ''}<td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">${ch.avgLevel.toFixed(2)}</td>${showDifferenceColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.maxLevel.toFixed(2)}</td>` : ''}${showDifferenceColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm ${differenceClass}">${ch.levelDifference.toFixed(2)}</td>` : ''}<td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${deviationClass}">${deviationText}</td>${showMeasurementsColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.measurementsDisplay}</td>` : ''}</tr>`;
             });
 
-            tableHTML += `
-                    </tbody>
-                </table>
-            `;
+            tableHTML += `</tbody></table>`;
             resultsTable.innerHTML = tableHTML;
         }
 
+
+        // --- SEGÉDFUNKCIÓK ---
+        const errorBarPlugin = { id: 'errorBarPlugin', afterDraw(chart) { if (totalFileCount <= 1) return; const { ctx, scales: { x, y } } = chart; ctx.save(); ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(220, 38, 38, 0.7)'; chart.data.datasets.forEach((dataset, i) => { if (dataset.type === 'line') return; const customData = dataset.customData; if (!customData) return; for (let j = 0; j < chart.getDatasetMeta(i).data.length; j++) { const bar = chart.getDatasetMeta(i).data[j]; const dataPoint = customData[j]; const xPos = bar.x; const yMin = y.getPixelForValue(dataPoint.minLevel); const yMax = y.getPixelForValue(dataPoint.maxLevel); const whiskerWidth = bar.width * 0.3; ctx.beginPath(); ctx.moveTo(xPos, yMin); ctx.lineTo(xPos, yMax); ctx.stroke(); ctx.beginPath(); ctx.moveTo(xPos - whiskerWidth / 2, yMax); ctx.lineTo(xPos + whiskerWidth / 2, yMax); ctx.stroke(); ctx.beginPath(); ctx.moveTo(xPos - whiskerWidth / 2, yMin); ctx.lineTo(xPos + whiskerWidth / 2, yMin); ctx.stroke(); } }); ctx.restore(); } };
+        function readFileAsText(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(reader.error); reader.readAsText(file); }); }
+        function extractDataFromXml(xmlDoc) { const data = [], channelTimestamps = []; xmlDoc.querySelectorAll('CHANNEL').forEach(channel => { const dateStr = channel.getAttribute('date'), timeStr = channel.getAttribute('time'); if (dateStr && timeStr) { const parsedDate = new Date(`${dateStr}T${timeStr}Z`); if (!isNaN(parsedDate)) channelTimestamps.push(parsedDate); } if (channel.querySelector('STATUS')?.getAttribute('locked') !== 'LOCKED') return; const channelName = channel.getAttribute('name'); const frequency = parseFloat(channel.getAttribute('frequency')); const levelEl = channel.querySelector('MEASURES > LEVEL, MEASURES > POWER'); const level = levelEl ? parseFloat(levelEl.getAttribute('value')) : null; let type = 'ANALOG', mer = null; if (channel.querySelector('DVB-C')) { type = 'DVBC'; const merEl = channel.querySelector('MEASURES > MER'); if (merEl) mer = parseFloat(merEl.getAttribute('value')); } if (channelName && !isNaN(level) && !isNaN(frequency)) { data.push({ channel: channelName, level, frequency, type, mer }); } }); return { channels: data, channelTimestamps }; }
+        function getStandardChannelName(freqMHz) { const channels = [ { name: 'E2', start: 44.75, end: 51.75 }, { name: 'E3', start: 51.75, end: 58.75 }, { name: 'E4', start: 58.75, end: 65.75 }, { name: 'S2', start: 108.75, end: 115.75 }, { name: 'S3', start: 115.75, end: 122.75 }, { name: 'S4', start: 122.75, end: 129.75 }, { name: 'S5', start: 129.75, end: 136.75 }, { name: 'S6', start: 136.75, end: 143.75 }, { name: 'S7', start: 143.75, end: 150.75 }, { name: 'S8', start: 150.75, end: 157.75 }, { name: 'S9', start: 157.75, end: 164.75 }, { name: 'S10', start: 164.75, end: 171.75 }, { name: 'E5', start: 171.75, end: 178.75 }, { name: 'E6', start: 178.75, end: 185.75 }, { name: 'E7', start: 185.75, end: 192.75 }, { name: 'E8', start: 192.75, end: 199.75 }, { name: 'E9', start: 199.75, end: 206.75 }, { name: 'E10', start: 206.75, end: 213.75 }, { name: 'E11', start: 213.75, end: 220.75 }, { name: 'E12', start: 220.75, end: 227.75 }, { name: 'S11', start: 227.75, end: 234.75 }, { name: 'S12', start: 234.75, end: 241.75 }, { name: 'S13', start: 241.75, end: 248.75 }, { name: 'S14', start: 248.75, end: 255.75 }, { name: 'S15', start: 255.75, end: 262.75 }, { name: 'S16', start: 262.75, end: 269.75 }, { name: 'S17', start: 269.75, end: 276.75 }, { name: 'S18', start: 276.75, end: 283.75 }, { name: 'S19', start: 283.75, end: 290.75 }, { name: 'S20', start: 290.75, end: 297.75 }, { name: 'S21', start: 298.75, end: 306.75 }, { name: 'S22', start: 306.75, end: 314.75 }, { name: 'S23', start: 314.75, end: 322.75 }, { name: 'S24', start: 322.75, end: 330.75 }, { name: 'S25', start: 330.75, end: 338.75 }, { name: 'S26', start: 338.75, end: 346.75 }, { name: 'S27', start: 346.75, end: 354.75 }, { name: 'S28', start: 354.75, end: 362.75 }, { name: 'S29', start: 362.75, end: 370.75 }, { name: 'S30', start: 370.75, end: 378.75 }, { name: 'S31', start: 378.75, end: 386.75 }, { name: 'S32', start: 386.75, end: 394.75 }, { name: 'S33', start: 394.75, end: 402.75 }, { name: 'S34', start: 402.75, end: 410.75 }, { name: 'S35', start: 410.75, end: 418.75 }, { name: 'S36', start: 418.75, end: 426.75 }, { name: 'S37', start: 426.75, end: 434.75 }, { name: 'S38', start: 434.75, end: 442.75 }, { name: 'S39', start: 442.75, end: 450.75 }, { name: 'S40', start: 450.75, end: 458.75 }, { name: 'S41', start: 458.75, end: 466.75 }, { name: 'E21', start: 466.75, end: 474.75 }, { name: 'E22', start: 474.75, end: 482.75 }, { name: 'E23', start: 482.75, end: 490.75 }, { name: 'E24', start: 490.75, end: 498.75 }, { name: 'E25', start: 498.75, end: 506.75 }, { name: 'E26', start: 506.75, end: 514.75 }, { name: 'E27', start: 514.75, end: 522.75 }, { name: 'E28', start: 522.75, end: 530.75 }, { name: 'E29', start: 530.75, end: 538.75 }, { name: 'E30', start: 538.75, end: 546.75 }, { name: 'E31', start: 546.75, end: 554.75 }, { name: 'E32', start: 554.75, end: 562.75 }, { name: 'E33', start: 562.75, end: 570.75 }, { name: 'E34', start: 570.75, end: 578.75 }, { name: 'E35', start: 578.75, end: 586.75 }, { name: 'E36', start: 586.75, end: 594.75 }, { name: 'E37', start: 594.75, end: 602.75 }, { name: 'E38', start: 602.75, end: 610.75 }, { name: 'E39', start: 610.75, end: 618.75 }, { name: 'E40', start: 618.75, end: 626.75 }, { name: 'E41', start: 626.75, end: 634.75 }, { name: 'E42', start: 634.75, end: 642.75 }, { name: 'E43', start: 642.75, end: 650.75 }, { name: 'E44', start: 650.75, end: 658.75 }, { name: 'E45', start: 658.75, end: 666.75 }, { name: 'E46', start: 666.75, end: 674.75 }, { name: 'E47', start: 674.75, end: 682.75 }, { name: 'E48', start: 682.75, end: 690.75 }, { name: 'E49', start: 690.75, end: 698.75 }, { name: 'E50', start: 698.75, end: 706.75 }, { name: 'E51', start: 706.75, end: 714.75 }, { name: 'E52', start: 714.75, end: 722.75 }, { name: 'E53', start: 722.75, end: 730.75 }, { name: 'E54', start: 730.75, end: 738.75 }, { name: 'E55', start: 738.75, end: 746.75 }, { name: 'E56', start: 746.75, end: 754.75 }, { name: 'E57', start: 754.75, end: 762.75 }, { name: 'E58', start: 762.75, end: 770.75 }, { name: 'E59', start: 770.75, end: 778.75 }, { name: 'E60', start: 778.75, end: 786.75 }, { name: 'E61', start: 786.75, end: 794.75 }, { name: 'E62', start: 794.75, end: 802.75 }, { name: 'E63', start: 802.75, end: 810.75 }, { name: 'E64', start: 810.75, end: 818.75 }, { name: 'E65', start: 818.75, end: 826.75 }, { name: 'E66', start: 826.75, end: 834.75 }, { name: 'E67', start: 834.75, end: 842.75 }, { name: 'E68', start: 842.75, end: 850.75 }, { name: 'E69', start: 850.75, end: 858.75 } ]; return channels.find(ch => freqMHz >= ch.start && freqMHz < ch.end) || null; }
+        function formatDateTime(date) { if (!date) return 'N/A'; return date.toLocaleString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
+        function replaceHungarianChars(str) { if (typeof str !== 'string') return str; return str.replace(/ő/g, 'ö').replace(/ű/g, 'ü').replace(/Ő/g, 'Ö').replace(/Ű/g, 'Ü'); }
     </script>
 </body>
 </html>
+
