@@ -87,6 +87,10 @@
                             <label for="toggle-tilt-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Tilt ábrázolása</label>
                         </div>
                         <div class="flex items-center">
+                            <input type="checkbox" id="toggle-minmax-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="toggle-minmax-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Min/Max jelölése</label>
+                        </div>
+                        <div class="flex items-center">
                             <input type="checkbox" id="toggle-outliers-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                             <label for="toggle-outliers-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Szélsőséges értékek szűrése (&gt;30dBuV eltérés)</label>
                         </div>
@@ -122,6 +126,12 @@
                              <div class="w-5 h-0.5 mr-2" style="background-color: rgba(220, 38, 38, 1);"></div>
                              <span id="tilt-legend" class="text-sm text-gray-600 font-semibold"></span>
                         </div>
+                        <div id="minmax-legend-container" class="flex items-center ml-4" style="display: none;">
+                            <div class="w-5 h-0.5 mr-2 border-t-2 border-dashed" style="border-color: rgba(0, 0, 0, 1);"></div>
+                            <span id="min-legend" class="text-sm text-gray-600 font-semibold mr-4"></span>
+                            <div class="w-5 h-0.5 mr-2 border-t-2 border-dashed" style="border-color: rgba(0, 0, 0, 1);"></div>
+                            <span id="max-legend" class="text-sm text-gray-600 font-semibold"></span>
+                       </div>
                     </div>
                 </div>
                 <div id="table-section" class="mb-8">
@@ -171,6 +181,7 @@
         const meresiHelyInput = document.getElementById('meresi-hely');
         const megjegyzesInput = document.getElementById('megjegyzes');
         const toggleTiltCheckbox = document.getElementById('toggle-tilt-checkbox');
+        const toggleMinMaxCheckbox = document.getElementById('toggle-minmax-checkbox');
         const toggleOutliersCheckbox = document.getElementById('toggle-outliers-checkbox');
         const toggleStandardScaleCheckbox = document.getElementById('toggle-standard-scale-checkbox');
         const scaleMinInput = document.getElementById('scale-min-input');
@@ -194,7 +205,8 @@
                 fileInfo.textContent = `${totalFileCount} fájl kiválasztva. Feldolgozás...`;
                 resultsContainer.classList.add('hidden');
                 loader.classList.remove('hidden');
-                toggleTiltCheckbox.checked = false; 
+                toggleTiltCheckbox.checked = false;
+                toggleMinMaxCheckbox.checked = false;
                 toggleOutliersCheckbox.checked = false;
                 toggleStandardScaleCheckbox.checked = false;
                 scaleMinInput.disabled = true;
@@ -209,6 +221,7 @@
 
         // Checkbox-ok változása
         toggleTiltCheckbox.addEventListener('change', () => { if (rawChannelData.length > 0) analyzeAndRender(); });
+        toggleMinMaxCheckbox.addEventListener('change', () => { if (rawChannelData.length > 0) analyzeAndRender(); });
         toggleOutliersCheckbox.addEventListener('change', () => { if (rawChannelData.length > 0) analyzeAndRender(); });
         scaleMinInput.addEventListener('input', () => { if (rawChannelData.length > 0 && toggleStandardScaleCheckbox.checked) analyzeAndRender(); });
         toggleNarrowScaleCheckbox.addEventListener('change', () => { if (rawChannelData.length > 0) analyzeAndRender(); });
@@ -516,6 +529,7 @@
             const tiltLegendContainer = document.getElementById('tilt-legend-container');
             const tiltLegendElement = document.getElementById('tilt-legend');
             const showTilt = toggleTiltCheckbox.checked;
+            const showMinMax = toggleMinMaxCheckbox.checked;
             const showStandardScale = toggleStandardScaleCheckbox.checked;
             const isNarrowScale = toggleNarrowScaleCheckbox.checked;
             const scaleMin = parseFloat(scaleMinInput.value);
@@ -547,6 +561,46 @@
                 datasets.push({ type: 'line', label: 'Összekötő egyenes', data: lineData, borderColor: 'rgba(220, 38, 38, 0.9)', borderWidth: 2.5, fill: false, tension: 0, pointRadius: 5, pointBackgroundColor: 'rgba(220, 38, 38, 1)', spanGaps: true, order: 1 });
             } else {
                  tiltLegendContainer.style.display = 'none';
+            }
+
+            if (showMinMax && chartData.length > 1) {
+                const avgLevels = chartData.map(ch => ch.avgLevel);
+                const minAvgLevel = Math.min(...avgLevels);
+                const maxAvgLevel = Math.max(...avgLevels);
+
+                datasets.push({
+                    type: 'line',
+                    label: 'Min Átlag',
+                    data: new Array(chartData.length).fill(minAvgLevel),
+                    borderColor: 'rgba(0, 0, 0, 1)',
+                    borderWidth: 2,
+                    fill: false,
+                    pointRadius: 0,
+                    borderDash: [5, 5],
+                    order: 0
+                });
+
+                datasets.push({
+                    type: 'line',
+                    label: 'Max Átlag',
+                    data: new Array(chartData.length).fill(maxAvgLevel),
+                    borderColor: 'rgba(0, 0, 0, 1)',
+                    borderWidth: 2,
+                    fill: false,
+                    pointRadius: 0,
+                    borderDash: [5, 5],
+                    order: 0
+                });
+                
+                const minMaxLegendContainer = document.getElementById('minmax-legend-container');
+                minMaxLegendContainer.style.display = 'flex';
+                document.getElementById('min-legend').textContent = `Min: ${minAvgLevel.toFixed(1)} dBuV`;
+                document.getElementById('max-legend').textContent = `Max: ${maxAvgLevel.toFixed(1)} dBuV`;
+            } else {
+                const minMaxLegendContainer = document.getElementById('minmax-legend-container');
+                if (minMaxLegendContainer) {
+                    minMaxLegendContainer.style.display = 'none';
+                }
             }
             
             const y_scale_options = { 
