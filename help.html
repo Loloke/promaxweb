@@ -61,121 +61,123 @@
         }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 text-gray-800">
 
     <div class="container mx-auto p-4 sm:p-6 lg:p-8">
-        <div class="bg-white rounded-2xl shadow-lg p-6 md:p-10 help-content">
+        <div class="w-full bg-white rounded-2xl shadow-lg">
+            <div class="flex border-b border-gray-200">
+                <a href="index.html" class="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    Főoldal
+                </a>
+                <a href="compare.html" class="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    Összehasonlítás
+                </a>
+                <a href="setup.html" class="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    Beállítás
+                </a>
+                <a href="help.html" class="px-4 py-2 text-sm font-medium text-gray-900 bg-gray-100 border-t border-l border-r border-gray-200 rounded-t-lg">
+                    Súgó
+                </a>
+            </div>
+            <div id="main-content" class="p-6 md:p-10 help-content">
 
-            <h2 class="!mt-0">XML Jelszint Analizátor - Használati Útmutató</h2>
+                <h2 class="!mt-0">XML Jelszint Analizátor - Használati Útmutató</h2>
 
-            <h3>Bevezetés</h3>
-            <p>
-                Ez az online eszköz a Promax Ranger típusú mérőműszerekből exportált <span class="code-inline">.xml</span> formátumú mérési fájlok feldolgozására és vizuális elemzésére szolgál. Segítségével könnyedén áttekintheti a mért jelszinteket, összehasonlíthatja a beállítás előtti és utáni állapotokat, és professzionális PDF jegyzőkönyvet készíthet az eredményekről.
-            </p>
-            <p>Az alkalmazás két fő nézetet kínál: a <strong>Főoldalt</strong> az egyedi mérések részletes elemzéséhez, és az <strong>Összehasonlító nézetet</strong> a két mérési adathalmaz (pl. beállítás előtt és után) közötti különbségek vizsgálatához.</p>
+                <h3>Bevezetés</h3>
+                <p>
+                    Ez az online eszköz a Promax Ranger típusú mérőműszerekből exportált <span class="code-inline">.xml</span> formátumú mérési fájlok feldolgozására és vizuális elemzésére szolgál.
+                </p>
+                <p>
+                    Az alkalmazás egy egységes, füles felületen keresztül kínál különböző funkciókat:
+                </p>
+                <ul>
+                    <li><strong>Főoldal:</strong> Egyedi mérések részletes, statisztikai alapú elemzéséhez.</li>
+                    <li><strong>Összehasonlítás:</strong> Két mérési adathalmaz (pl. beállítás előtt és után) közötti különbségek vizsgálatához.</li>
+                    <li><strong>Beállítás:</strong> Fejállomási eszközök beállításának támogatásához, a szükséges jelszint kompenzáció kiszámításával.</li>
+                </ul>
 
-            <!-- Főoldal -->
-            <h2>Főoldal: Részletes Elemzés</h2>
-            <p>A főoldal egy vagy több mérési pont részletes, statisztikai alapú elemzésére szolgál.</p>
+                <!-- Főoldal -->
+                <h2>Főoldal: Részletes Elemzés</h2>
+                <p>A főoldal egy vagy több mérési pont részletes, statisztikai alapú elemzésére szolgál.</p>
 
-            <h4>1. Fájlok feltöltése</h4>
-            <ol class="list-decimal">
-                <li>Kattintson a <strong>"Mérési fájlok kiválasztása (.XML)"</strong> gombra.</li>
-                <li>A felugró ablakban válassza ki az összes <span class="code-inline">.xml</span> fájlt, amelyet elemezni szeretne. Több fájl egyidejű kijelölésével a program összevont elemzést készít.</li>
-                <li>A kiválasztás után a program automatikusan feldolgozza a fájlokat, és megjeleníti az eredményeket.</li>
-            </ol>
+                <h4>1. Fájlok feltöltése</h4>
+                <ol class="list-decimal">
+                    <li>Kattintson a <strong>"Mérési fájlok kiválasztása (.XML)"</strong> gombra.</li>
+                    <li>A felugró ablakban válassza ki az összes <span class="code-inline">.xml</span> fájlt, amelyet elemezni szeretne. Több fájl egyidejű kijelölésével a program összevont elemzést készít.</li>
+                    <li>A kiválasztás után a program automatikusan feldolgozza a fájlokat, és megjeleníti az eredményeket.</li>
+                </ol>
 
-            <h4>2. A Grafikon Értelmezése</h4>
-            <p>A diagram a csatornák átlagos jelszintjét mutatja oszlopdiagram formájában, frekvencia szerint növekvő sorrendben.</p>
-            <ul>
-                <li><strong>Oszlopok színei:</strong> A színek a csatorna típusát jelölik:
-                    <ul class="list-disc ml-6 mt-2">
-                        <li><strong class="text-indigo-600">Lila:</strong> Analóg csatorna</li>
-                        <li><strong class="text-green-600">Zöld:</strong> DVB-C (digitális) csatorna</li>
-                    </ul>
-                </li>
-                <li><strong>Hibasávok (piros vonalak):</strong> Ha kettő vagy több fájlt tölt fel, a piros "T" alakú hibasávok jelölik a mérési tartományt. A vonal alsó vége a mért <strong>minimális</strong>, a felső vége pedig a <strong>maximális</strong> jelszintet mutatja az adott csatornán.</li>
-            </ul>
+                <h4>2. A Grafikon Értelmezése</h4>
+                <p>A diagram a csatornák átlagos jelszintjét mutatja oszlopdiagram formájában, frekvencia szerint növekvő sorrendben.</p>
+                <ul>
+                    <li><strong>Oszlopok színei:</strong> A színek a csatorna típusát jelölik (Analóg vagy DVB-C).</li>
+                    <li><strong>Hibasávok (piros vonalak):</strong> Ha kettő vagy több fájlt tölt fel, a piros "T" alakú hibasávok jelölik a mérési tartományt. A vonal alsó vége a mért <strong>minimális</strong>, a felső vége pedig a <strong>maximális</strong> jelszintet mutatja az adott csatornán.</li>
+                </ul>
 
-            <h4>3. Vezérlőelemek (Grafikon felett)</h4>
-            <ul>
-                <li><strong>Tilt ábrázolása:</strong> Bejelölve megjelenít egy piros egyenest, amely az első és az utolsó csatorna átlagos jelszintjét köti össze. A jelmagyarázatban megjelenik a "Tilt" értéke, ami a hálózat frekvenciafüggő csillapításáról ad képet.</li>
-                <li><strong>Min/Max jelölése:</strong> Bejelölve a grafikonon megjelenik két fekete, vízszintes, szaggatott vonal, amelyek a csatornák átlagos jelszintjeinek minimumát és maximumát jelölik. A jelmagyarázatban ezen értékek is megjelennek, segítve a jelszint-tartomány gyors áttekintését.</li>
-                <li><strong>Szélsőséges értékek szűrése:</strong> Eltávolítja azokat a csatornákat, amelyek átlagos jelszintje több mint 30 dBuV-vel tér el a teljes átlagtól. Ez segít a kiugró, valószínűleg hibás mérések figyelmen kívül hagyásában.</li>
-                <li><strong>Szabványos skála:</strong> Rögzíti a grafikon Y tengelyét egy fix tartományra, ami megkönnyíti a különböző mérések vizuális összehasonlítását. A kezdőérték megadása után egy 6 dBuV-s tartományt ábrázol. A "Szűkített (3dBuV)" opcióval ez a tartomány 3 dBuV-re csökkenthető a finomabb részletek vizsgálatához.</li>
-                <li><strong>Digitális jelszint kompenzáció:</strong> Bejelölve +3 dBuV-t ad a digitális csatornák jelszintjéhez, hogy azok vizuálisan jobban összehasonlíthatók legyenek az analóg csatornák csúcsértékével.</li>
-            </ul>
+                <h4>3. Vezérlőelemek (Grafikon felett)</h4>
+                <ul>
+                    <li><strong>Tilt ábrázolása:</strong> Bejelölve megjelenít egy piros egyenest, amely az első és az utolsó csatorna átlagos jelszintjét köti össze. A jelmagyarázatban megjelenik a "Tilt" értéke, ami a hálózat frekvenciafüggő csillapításáról ad képet.</li>
+                    <li><strong>Min/Max jelölése:</strong> Bejelölve a grafikonon megjelenik két fekete, vízszintes, szaggatott vonal, amelyek a csatornák átlagos jelszintjeinek minimumát és maximumát jelölik. A jelmagyarázatban ezen értékek is megjelennek, segítve a jelszint-tartomány gyors áttekintését.</li>
+                    <li><strong>Szélsőséges értékek szűrése:</strong> Eltávolítja azokat a csatornákat, amelyek átlagos jelszintje több mint 30 dBuV-vel tér el a teljes átlagtól. Ez segít a kiugró, valószínűleg hibás mérések figyelmen kívül hagyásában.</li>
+                    <li><strong>Szabványos skála:</strong> Rögzíti a grafikon Y tengelyét egy fix tartományra, ami megkönnyíti a különböző mérések vizuális összehasonlítását. A kezdőérték megadása után egy 6 dBuV-s tartományt ábrázol. A "Szűkített (3dBuV)" opcióval ez a tartomány 3 dBuV-re csökkenthető a finomabb részletek vizsgálatához.</li>
+                    <li><strong>Digitális jelszint kompenzáció:</strong> Bejelölve +3 dBuV-t ad a digitális csatornák jelszintjéhez (átlag, min és max), hogy azok vizuálisan jobban összehasonlíthatók legyenek az analóg csatornák csúcsértékével.</li>
+                </ul>
 
-            <h4>4. A Részletes Adatok Táblázata</h4>
-            <p>A táblázat soronként, részletesen tartalmazza a feldolgozott csatornák adatait.</p>
-            <ul>
-                <li><strong>Átlag MER (dB):</strong> Digitális csatornák esetén a Modulációs Hibaarány (MER) átlagértéke. A 40 dB alatti értékek narancssárgával vannak kiemelve, jelezve a potenciálisan gyengébb minőséget.</li>
-                <li><strong>Különbség (dBuV):</strong> A minimális és maximális mért jelszint közötti különbség. A legnagyobb különbség pirossal van kiemelve.</li>
-                <li><strong>Eltérés az átlagtól (dB):</strong> Megmutatja, hogy az adott csatorna jelszintje mennyivel tér el az összes csatorna átlagától. A pozitív (átlag feletti) értékek zölddel, a negatív (átlag alatti) értékek pirossal jelennek meg.</li>
-            </ul>
+                <h4>4. A Részletes Adatok Táblázata</h4>
+                <p>A táblázat soronként, részletesen tartalmazza a feldolgozott csatornák adatait.</p>
+                <ul>
+                    <li><strong>Átlag MER (dB):</strong> Digitális csatornák esetén a Modulációs Hibaarány (MER) átlagértéke. A 40 dB alatti értékek narancssárgával vannak kiemelve.</li>
+                    <li><strong>Különbség (dBuV):</strong> A minimális és maximális mért jelszint közötti különbség. A legnagyobb különbség pirossal van kiemelve.</li>
+                    <li><strong>Eltérés az átlagtól (dB):</strong> Megmutatja, hogy az adott csatorna jelszintje mennyivel tér el az összes csatorna átlagától. A pozitív értékek zölddel, a negatív értékek pirossal jelennek meg.</li>
+                </ul>
 
-            <!-- Összehasonlító nézet -->
-            <h2>Összehasonlító Nézet</h2>
-            <p>Ez a nézet két adathalmaz – jellemzően egy "beállítás előtti" és egy "beállítás utáni" állapot – összevetésére szolgál. A nézetet a főoldalon található <strong>"Összehasonlító nézet"</strong> linkre kattintva érheti el.</p>
+                <!-- Összehasonlító nézet -->
+                <h2>Összehasonlító Nézet</h2>
+                <p>Ez a nézet két adathalmaz – jellemzően egy "beállítás előtti" és egy "beállítás utáni" állapot – összevetésére szolgál.</p>
+                <h4>1. Fájlok feltöltése</h4>
+                <p>Az oldalon két külön fájlfeltöltő található: "Előtte" és "Utána".</p>
+                <h4>2. Az Összehasonlító Grafikon és Táblázat</h4>
+                <p>A grafikon és a táblázat egyaránt az "Előtte" és "Utána" állapotokat jeleníti meg, lehetővé téve a változások egyszerű leolvasását.</p>
 
-            <h4>1. Fájlok feltöltése</h4>
-            <p>Az oldalon két külön fájlfeltöltő található:</p>
-            <ol class="list-decimal">
-                <li><strong>"Előtte" fájlok (.XML):</strong> Töltse fel azokat a fájlokat, amelyek a kiinduló állapotot (pl. beállítás, javítás előtti) dokumentálják.</li>
-                <li><strong>"Utána" fájlok (.XML):</strong> Töltse fel azokat a fájlokat, amelyek a beavatkozás utáni állapotot rögzítik.</li>
-                <li>Kattintson a <strong>"Feldolgozás és összehasonlítás"</strong> gombra az elemzés elindításához.</li>
-            </ol>
+                <!-- Beállítás nézet -->
+                <h2>Beállítás: Fejállomás Támogatás</h2>
+                <p>Ez a nézet a fejállomási eszközök (pl. modulátorok) kimeneti jelszintjének beállítását segíti.</p>
+                <h4>1. Használat</h4>
+                <ol class="list-decimal">
+                    <li>Töltse fel a beállítandó rendszer aktuális állapotát rögzítő mérési fájlokat.</li>
+                    <li>Adja meg a <strong>"Céljelszint"</strong> mezőben az elérni kívánt egységes jelszintet (pl. 75 dBuV).</li>
+                    <li>A program automatikusan kiszámítja és megjeleníti a szükséges módosításokat.</li>
+                </ol>
+                <h4>2. A Kompenzációs Táblázat Értelmezése</h4>
+                <p>A "Beállítás" nézet táblázata egy új oszloppal bővül:</p>
+                <ul>
+                    <li><strong>Kompenzáció (dB):</strong> Ez az érték mutatja meg, hogy az adott csatorna jelszintjét mennyivel kell módosítani (csillapítani vagy erősíteni) a céljelszint eléréséhez.
+                        <ul class="list-disc ml-6 mt-2">
+                            <li>A <strong>pozitív (zöld)</strong> érték azt jelenti, hogy a csatorna jelszintjét növelni kell (pl. egy kisebb értékű csillapító behelyezésével).</li>
+                            <li>A <strong>negatív (piros)</strong> érték azt jelenti, hogy a csatorna jelszintjét csökkenteni kell (pl. egy nagyobb értékű csillapító behelyezésével).</li>
+                        </ul>
+                    </li>
+                </ul>
+                <p>A számítás képlete: <span class="code-inline">Kompenzáció = Céljelszint - Mért Átlag Jelszint</span>.</p>
 
-            <h4>2. Az Összehasonlító Grafikon Értelmezése</h4>
-            <p>A grafikon minden csatornához két oszlopot rendel, megkönnyítve a változások vizuális azonosítását.</p>
-            <ul>
-                <li><strong>Oszlopok színei:</strong>
-                    <ul class="list-disc ml-6 mt-2">
-                        <li><strong>Világosabb színek:</strong> Az "Előtte" állapot jelszintjeit jelölik.</li>
-                        <li><strong>Sötétebb színek:</strong> Az "Utána" állapot jelszintjeit jelölik.</li>
-                        <li>Az analóg csatornák kék, a digitálisak türkiz árnyalatokkal jelennek meg.</li>
-                    </ul>
-                </li>
-                <li><strong>Hibasávok (piros vonalak):</strong> A piros hibasávok itt is a minimális és maximális mért értékeket jelölik mind az "előtte", mind az "utáni" adatsorhoz.</li>
-                <li><strong>Tilt ábrázolása:</strong> A "Tilt" opció bejelölésével a program mindkét adatsorra (előtte és utána) kiszámolja és felrajzolja a tilt-vonalat, így a hálózat karakterisztikájának változása is könnyen leolvasható.</li>
-            </ul>
+                <!-- Számítási metodika -->
+                <h2>Számítási Metodika</h2>
+                <ul>
+                    <li>
+                        <strong>Átlagszint szűrése:</strong> A Főoldalon és a Beállítás nézetben a program a feltöltött fájlok számától függően szűri a kiugró értékeket a pontosabb átlagszámítás érdekében (1-3 fájl: nincs szűrés; 4-6 fájl: min/max eldobása; 7+ fájl: 2 min/max eldobása). Az Összehasonlító nézet minden adatot felhasznál.
+                    </li>
+                    <li>
+                        <strong>Középfrekvencia számítása:</strong> Analóg csatornák esetén a program korrigálja a mért középfrekvenciát a szabványos képvivő frekvenciára.
+                    </li>
+                </ul>
 
-            <h4>3. Az Összehasonlító Táblázat</h4>
-            <p>A táblázat leegyszerűsített formában, a legfontosabb adatokat kiemelve mutatja be az összehasonlítás eredményét.</p>
-            <ul>
-                <li><strong>Átlagok "Előtte" / "Utána":</strong> A táblázat felett egy összefoglaló mutatja a globális átlagos jelszinteket, külön az analóg és digitális csatornákra, mindkét állapotra.</li>
-                <li>A táblázat oszlopai egyértelműen mutatják az "Előtte" és "Utána" mért jelszinteket és MER értékeket, lehetővé téve a közvetlen összehasonlítást.</li>
-            </ul>
-
-            <!-- Számítási metodika -->
-            <h2>Számítási Metodika</h2>
-            <p>A program a háttérben több intelligens számítást is végez a pontos és releváns eredmények érdekében.</p>
-            <ul>
-                <li>
-                    <strong>Átlagszint számítása (mérési pontok szűrése):</strong> A Főoldalon a program a feltöltött fájlok számától függően szűri a kiugró értékeket a pontosabb átlagszámítás érdekében:
-                    <ul class="list-disc ml-6 mt-2">
-                        <li><strong>1-3 fájl:</strong> Az összes mért értéket felhasználja.</li>
-                        <li><strong>4-6 fájl:</strong> Eldobja a legkisebb és a legnagyobb mért értéket.</li>
-                        <li><strong>7 vagy több fájl:</strong> Eldobja a két legkisebb és a két legnagyobb mért értéket.</li>
-                    </ul>
-                    Az Összehasonlító nézetben a program minden feltöltött fájlt figyelembe vesz az átlagszámításnál, hogy a valós változást mutassa.
-                </li>
-                <li>
-                    <strong>Középfrekvencia számítása:</strong> Az analóg csatornák esetében a mérőműszerek gyakran a csatorna középfrekvenciáját rögzítik. A program ezt a táblázatban és a szabványos csatornanév (CH) meghatározásához automatikusan korrigálja a szabványos képvivő frekvenciára az alábbi képlettel: <span class="code-inline">Képvivő = Középfrekvencia - (Sávszélesség / 2) + 1.25 MHz</span>, ahol a sávszélesség 7 vagy 8 MHz a frekvenciasávtól függően. A digitális (DVB-C) csatornák a szabványos középfrekvenciájukon jelennek meg.
-                </li>
-                <li>
-                    <strong>"Tilt" számítása:</strong> A "Tilt" értéke a legmagasabb frekvenciájú csatorna átlagos jelszintjéből kivonva a legalacsonyabb frekvenciájú csatorna átlagos jelszintjét. Ez az érték a kábelhálózat frekvenciafüggő csillapítását jellemzi.
-                </li>
-            </ul>
-
-            <h3>PDF Exportálás</h3>
-            <p>Mindkét nézetben lehetőség van egy formázott PDF jegyzőkönyv generálására.</p>
-            <ol class="list-decimal">
-                <li>Töltse ki a <strong>"Mérési hely"</strong> és a <strong>"Megjegyzés"</strong> mezőket. Ezen mezők kitöltése kötelező a PDF generálásához.</li>
-                <li>Kattintson a <strong>"Mentés PDF-be"</strong> gombra.</li>
-                <li>A böngésző letölti a PDF fájlt, amely tartalmazza a megadott fejlécinformációkat, a grafikon aktuális nézetét és a részletes táblázatot.</li>
-            </ol>
-
+                <h3>PDF Exportálás</h3>
+                <p>A <strong>Főoldalon</strong> és az <strong>Összehasonlító nézetben</strong> lehetőség van egy formázott PDF jegyzőkönyv generálására. A "Beállítás" nézet nem támogatja a PDF exportálást.</p>
+                <ol class="list-decimal">
+                    <li>Töltse ki a <strong>"Mérési hely"</strong> és a <strong>"Megjegyzés"</strong> mezőket.</li>
+                    <li>Kattintson a <strong>"Mentés PDF-be"</strong> gombra.</li>
+                </ol>
+            </div>
         </div>
     </div>
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XML Jelszint Analizátor</title>
+    <title>Fejállomás Beállító</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
@@ -34,16 +34,6 @@
         .file-input-button:hover {
             background-color: #4338ca;
         }
-        .pdf-button {
-            background-color: #16a34a;
-        }
-        .pdf-button:hover {
-            background-color: #15803d;
-        }
-        .pdf-button:disabled {
-            background-color: #9ca3af;
-            cursor: not-allowed;
-        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -51,13 +41,13 @@
     <div class="container mx-auto p-4 sm:p-6 lg:p-8">
         <div class="w-full bg-white rounded-2xl shadow-lg">
             <div class="flex border-b border-gray-200">
-                <a href="index.html" class="px-4 py-2 text-sm font-medium text-gray-900 bg-gray-100 border-t border-l border-r border-gray-200 rounded-t-lg">
+                <a href="index.html" class="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
                     Főoldal
                 </a>
                 <a href="compare.html" class="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
                     Összehasonlítás
                 </a>
-                <a href="setup.html" class="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <a href="setup.html" class="px-4 py-2 text-sm font-medium text-gray-900 bg-gray-100 border-t border-l border-r border-gray-200 rounded-t-lg">
                     Beállítás
                 </a>
                 <a href="help.html" class="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
@@ -66,8 +56,8 @@
             </div>
             <div id="main-content" class="p-6 md:p-8">
                 <div class="text-center mb-8">
-                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Mérési Adatok Feldolgozása</h1>
-                    <p class="mt-2 text-lg text-gray-600">Töltse fel a mérőműszer XML fájljait a jelszintek elemzéséhez.</p>
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Fejállomás Beállító</h1>
+                    <p class="mt-2 text-lg text-gray-600">Töltse fel a mérőműszer XML fájljait és adja meg a céljelszintet a kompenzáció kiszámításához.</p>
                 </div>
 
                 <div class="flex flex-col items-center justify-center w-full mb-8">
@@ -112,6 +102,11 @@
                                 <input type="checkbox" id="toggle-digital-compensation-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                                 <label for="toggle-digital-compensation-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Digitális jelszint kompenzáció (+3dBuV)</label>
                             </div>
+                            <div class="flex items-center">
+                                <label for="target-level-input" class="ml-2 block text-sm text-gray-900">Céljelszint:</label>
+                                <input type="number" id="target-level-input" value="75" class="ml-2 w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <label for="target-level-input" class="ml-1 mr-4 block text-sm text-gray-900">dBuV</label>
+                            </div>
                         </div>
 
                         <div class="bg-gray-50 p-4 rounded-lg">
@@ -142,25 +137,6 @@
                         <h2 class="text-2xl font-semibold text-center mb-4">Részletes adatok</h2>
                         <div id="resultsTable" class="overflow-x-auto"></div>
                     </div>
-
-                    <div class="text-center border-t pt-8 mt-8">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 max-w-4xl mx-auto">
-                            <div>
-                                <label for="meresi-hely" class="block text-sm font-medium text-gray-700 text-left mb-1">Mérési hely (pl. Tűzoltóság)</label>
-                                <input type="text" id="meresi-hely" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Pl. Budapest, Kossuth Lajos utca 1.">
-                            </div>
-                            <div>
-                                <label for="megjegyzes" class="block text-sm font-medium text-gray-700 text-left mb-1">Megjegyzés (pl. Főőrség)</label>
-                                <input type="text" id="megjegyzes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Pl. 2. emelet, 3. lakás">
-                            </div>
-                        </div>
-                        <button id="save-pdf-button" class="action-button pdf-button">
-                            <svg id="pdf-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
-                            <span id="pdf-button-text">Mentés PDF-be</span>
-                        </button>
-                    </div>
                 </div>
 
                  <div id="loader" class="hidden text-center">
@@ -176,6 +152,6 @@
     </div>
 
     <script src="js/main.js"></script>
-    <script src="js/index.js"></script>
+    <script src="js/setup.js"></script>
 </body>
 </html>

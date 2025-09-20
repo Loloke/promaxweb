@@ -32,7 +32,7 @@ processButton.addEventListener('click', async () => {
     const filesAfter = fileUploadAfter.files;
 
     if (filesBefore.length === 0 || filesAfter.length === 0) {
-        alert("Kérjük, válasszon ki fájlokat mindkét kategóriában ("előtte" és "utána").");
+        alert('Kérjük, válasszon ki fájlokat mindkét kategóriában ("előtte" és "utána").');
         return;
     }
 

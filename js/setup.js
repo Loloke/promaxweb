@@ -4,9 +4,7 @@ const fileInfo = document.getElementById('file-info');
 const resultsContainer = document.getElementById('results-container');
 const loader = document.getElementById('loader');
 const resultsTable = document.getElementById('resultsTable');
-const savePdfButton = document.getElementById('save-pdf-button');
-const meresiHelyInput = document.getElementById('meresi-hely');
-const megjegyzesInput = document.getElementById('megjegyzes');
+
 const toggleTiltCheckbox = document.getElementById('toggle-tilt-checkbox');
 const toggleMinMaxCheckbox = document.getElementById('toggle-minmax-checkbox');
 const toggleOutliersCheckbox = document.getElementById('toggle-outliers-checkbox');
@@ -15,8 +13,8 @@ const scaleMinInput = document.getElementById('scale-min-input');
 const toggleNarrowScaleCheckbox = document.getElementById('toggle-narrow-scale-checkbox');
 const narrowScaleContainer = document.getElementById('narrow-scale-container');
 const toggleDigitalCompensationCheckbox = document.getElementById('toggle-digital-compensation-checkbox');
+const targetLevelInput = document.getElementById('target-level-input');
 let chartInstance = null;
-let processedDataForPdf = [];
 let firstMeasurementTime = null;
 let lastMeasurementTime = null;
 let totalFileCount = 0;
@@ -53,6 +51,7 @@ toggleOutliersCheckbox.addEventListener('change', () => { if (rawChannelData.len
 scaleMinInput.addEventListener('input', () => { if (rawChannelData.length > 0 && toggleStandardScaleCheckbox.checked) analyzeAndRender(); });
 toggleNarrowScaleCheckbox.addEventListener('change', () => { if (rawChannelData.length > 0) analyzeAndRender(); });
 toggleDigitalCompensationCheckbox.addEventListener('change', () => { if (rawChannelData.length > 0) analyzeAndRender(); });
+targetLevelInput.addEventListener('input', () => { if (rawChannelData.length > 0) analyzeAndRender(); });
 
 toggleStandardScaleCheckbox.addEventListener('change', () => {
     scaleMinInput.disabled = !toggleStandardScaleCheckbox.checked;
@@ -65,177 +64,6 @@ toggleStandardScaleCheckbox.addEventListener('change', () => {
     if (rawChannelData.length > 0) analyzeAndRender();
 });
 
-
-// PDF generálás
-savePdfButton.addEventListener('click', async () => {
-    const { jsPDF } = window.jspdf;
-    const graphSection = document.getElementById('graph-section');
-    const button = document.getElementById('save-pdf-button');
-
-    const meresiHelyRaw = meresiHelyInput.value.trim();
-    const megjegyzesRaw = megjegyzesInput.value.trim();
-
-    if (!meresiHelyRaw || !megjegyzesRaw) {
-        alert("A 'Mérési hely' és a 'Megjegyzés' mezők kitöltése kötelező!");
-        return;
-    }
-
-    if (processedDataForPdf.length === 0) {
-        alert("Nincsenek adatok a PDF generálásához.");
-        return;
-    }
-
-    button.disabled = true;
-
-    try {
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const margin = 10;
-        const contentWidth = pdfWidth - margin * 2;
-        let lastY = margin;
-
-        const meresiHely = replaceHungarianChars(meresiHelyRaw);
-        const megjegyzes = replaceHungarianChars(megjegyzesRaw);
-
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(18);
-        pdf.text(meresiHely, pdf.internal.pageSize.getWidth() / 2, lastY, { align: 'center' });
-        lastY += 8;
-
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(12);
-        pdf.text(megjegyzes, pdf.internal.pageSize.getWidth() / 2, lastY, { align: 'center' });
-        lastY += 8;
-
-        pdf.setFontSize(10);
-        const firstMeasurementText = `Elsö mérés: ${formatDateTime(firstMeasurementTime)}`;
-        const lastMeasurementText = `Utolsó mérés: ${formatDateTime(lastMeasurementTime)}`;
-
-        pdf.text(replaceHungarianChars(firstMeasurementText), margin, lastY);
-        lastY += 6;
-        pdf.text(replaceHungarianChars(lastMeasurementText), margin, lastY);
-        lastY += 10;
-        
-        const totalAvgLevelSumPdf = processedDataForPdf.reduce((sum, ch) => sum + ch.avgLevel, 0);
-        const overallAvgLevelPdf = processedDataForPdf.length > 0 ? totalAvgLevelSumPdf / processedDataForPdf.length : 0;
-        
-        const analogChannelsPdf = processedDataForPdf.filter(ch => ch.type === 'ANALOG');
-        const digitalChannelsPdf = processedDataForPdf.filter(ch => ch.type === 'DVBC');
-        const analogAvgPdf = analogChannelsPdf.length > 0 ? analogChannelsPdf.reduce((sum, ch) => sum + ch.avgLevel, 0) / analogChannelsPdf.length : 0;
-        const digitalAvgPdf = digitalChannelsPdf.length > 0 ? digitalChannelsPdf.reduce((sum, ch) => sum + ch.avgLevel, 0) / digitalChannelsPdf.length : 0;
-
-        const overallAvgText = `Teljes atlagos jelszint: ${overallAvgLevelPdf.toFixed(1)} dBuV`;
-        const analogAvgText = `Analog atlag: ${analogAvgPdf.toFixed(1)} dBuV`;
-        const digitalAvgText = `Digitalis atlag: ${digitalAvgPdf.toFixed(1)} dBuV`;
-
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(12);
-        pdf.text(replaceHungarianChars(overallAvgText), pdf.internal.pageSize.getWidth() / 2, lastY, { align: 'center' });
-        lastY += 8;
-        pdf.setFontSize(10);
-        pdf.text(replaceHungarianChars(analogAvgText), pdf.internal.pageSize.getWidth() / 2, lastY, { align: 'center' });
-        lastY += 6;
-        pdf.text(replaceHungarianChars(digitalAvgText), pdf.internal.pageSize.getWidth() / 2, lastY, { align: 'center' });
-        lastY += 10;
-
-        const graphCanvas = await html2canvas(graphSection, { scale: 4, logging: false, useCORS: true });
-        const graphImgData = graphCanvas.toDataURL('image/jpeg', 0.90);
-        const graphRatio = graphCanvas.height / graphCanvas.width;
-        const graphImgHeight = contentWidth * graphRatio;
-
-        pdf.addImage(graphImgData, 'JPEG', margin, lastY, contentWidth, graphImgHeight, 'chart', 'SLOW');
-        lastY += graphImgHeight + 10;
-        
-        const showDifferenceColumn = totalFileCount > 1;
-        const showMeasurementsColumn = totalFileCount > 1;
-
-        let head = [['Csatorna', 'CH', 'Frekvencia (MHz)', 'Átlag MER (dB)', 'Átlag Jelszint (dBuV)']];
-        let columnOrder = ['name', 'standardChannelName', 'displayFrequency', 'avgMer', 'avgLevel'];
-
-        if (showDifferenceColumn) {
-            head[0].splice(4, 0, 'Min Jelszint (dBuV)');
-            head[0].push('Max Jelszint (dBuV)');
-            head[0].push('Különbség (dBuV)');
-            columnOrder.splice(4, 0, 'minLevel');
-            columnOrder.push('maxLevel');
-            columnOrder.push('levelDifference');
-        }
-        head[0].push('Eltérés az átlagtól (dB)');
-        columnOrder.push('deviationFromTotalAvg');
-
-        if (showMeasurementsColumn) {
-            head[0].push('Mérések');
-            columnOrder.push('measurementsDisplay');
-        }
-
-        const body = processedDataForPdf.map(ch => {
-            return columnOrder.map(key => {
-                let value = ch[key];
-                if (typeof value === 'number') {
-                    if (key === 'deviationFromTotalAvg') {
-                         return (value > 0 ? '+' : '') + value.toFixed(1);
-                    }
-                    return value.toFixed(2);
-                }
-                if (key === 'avgMer' && value === null) return 'N/A';
-                return replaceHungarianChars(value);
-            });
-        });
-        
-        pdf.autoTable({
-            head: head.map(row => row.map(cell => replaceHungarianChars(cell))),
-            body: body,
-            startY: lastY,
-            theme: 'grid',
-            styles: { font: 'helvetica', fontStyle: 'normal', fontSize: 8 },
-            headStyles: { font: 'helvetica', fontStyle: 'bold', fillColor: [22, 160, 133] },
-            margin: { top: margin, right: margin, bottom: margin, left: margin },
-            didParseCell: function (data) {
-                const rowData = processedDataForPdf[data.row.index];
-                if (!rowData) return;
-                
-                const key = columnOrder[data.column.index];
-
-                if (key === 'levelDifference' && showDifferenceColumn) {
-                    const maxDifferencePdf = Math.max(...processedDataForPdf.map(ch => ch.levelDifference));
-                     if (rowData.levelDifference === maxDifferencePdf) {
-                        data.cell.styles.textColor = [220, 38, 38];
-                        data.cell.styles.fontStyle = 'bold';
-                    }
-                }
-                
-                if (key === 'avgMer' && rowData.type === 'DVBC' && rowData.avgMer < 40) {
-                     data.cell.styles.textColor = [234, 88, 12];
-                     data.cell.styles.fontStyle = 'bold';
-                }
-
-                if (key === 'deviationFromTotalAvg') {
-                    if (rowData.deviationFromTotalAvg > 0) {
-                        data.cell.styles.textColor = [22, 163, 74];
-                    } else if (rowData.deviationFromTotalAvg < 0) {
-                        data.cell.styles.textColor = [220, 38, 38];
-                    }
-                    data.cell.styles.fontStyle = 'bold';
-                }
-            },
-            didDrawPage: (data) => {
-                const pageCount = pdf.internal.getNumberOfPages();
-                pdf.setFont('helvetica', 'normal');
-                pdf.setFontSize(10);
-                pdf.text(replaceHungarianChars(`Oldal ${data.pageNumber} / ${pageCount}`), data.settings.margin.left, pdf.internal.pageSize.height - 10);
-            }
-        });
-
-        const today = new Date().toISOString().slice(0, 10);
-        pdf.save(`meresi_jegyzek_${today}.pdf`);
-
-    } catch (error) {
-        console.error("PDF generálási hiba:", error);
-        alert("Hiba történt a PDF generálása során: " + error.message);
-    } finally {
-        button.disabled = false;
-    }
-});
 
 
 // --- FŐ FUNKCIÓK ---
@@ -270,9 +98,15 @@ async function processFiles(files) {
 
 function analyzeAndRender() {
     const { processedChannels, averages } = processChannelData(rawChannelData, totalFileCount, toggleOutliersCheckbox.checked);
-    processedDataForPdf = processedChannels;
-    renderChart(processedChannels);
-    renderTable(processedChannels, totalFileCount, averages.analog, averages.digital);
+    const targetLevel = parseFloat(targetLevelInput.value);
+
+    const channelsWithCompensation = processedChannels.map(ch => ({
+        ...ch,
+        compensation: targetLevel - ch.avgLevel
+    }));
+
+    renderChart(channelsWithCompensation);
+    renderTable(channelsWithCompensation, totalFileCount, averages.analog, averages.digital);
     resultsContainer.classList.remove('hidden');
 }
 
@@ -436,6 +270,7 @@ function renderTable(processedData, fileCount, analogAvg, digitalAvg) {
                     ${showDifferenceColumn ? '<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Max Jelszint (dBuV)</th>' : ''}
                     ${showDifferenceColumn ? '<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Különbség (dBuV)</th>' : ''}
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Eltérés az átlagtól (dB)</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kompenzáció (dB)</th>
                     ${showMeasurementsColumn ? '<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mérések</th>' : ''}
                 </tr>
             </thead>
@@ -453,8 +288,12 @@ function renderTable(processedData, fileCount, analogAvg, digitalAvg) {
         const deviation = ch.deviationFromTotalAvg;
         const deviationText = (deviation > 0 ? '+' : '') + deviation.toFixed(1);
         const deviationClass = deviation > 0 ? 'text-green-600' : 'text-red-600';
+        const compensation = ch.compensation;
+        const compensationText = (compensation > 0 ? '+' : '') + compensation.toFixed(1);
+        const compensationClass = compensation > 0 ? 'text-green-600' : 'text-red-600';
 
-        tableHTML += `<tr><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${ch.name}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.standardChannelName}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.displayFrequency.toFixed(2)}</td><td class="px-6 py-4 whitespace-nowrap text-sm ${merClass}">${merContent}</td>${showDifferenceColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.minLevel.toFixed(2)}</td>` : ''}<td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">${ch.avgLevel.toFixed(2)}</td>${showDifferenceColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.maxLevel.toFixed(2)}</td>` : ''}${showDifferenceColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm ${differenceClass}">${ch.levelDifference.toFixed(2)}</td>` : ''}<td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${deviationClass}">${deviationText}</td>${showMeasurementsColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.measurementsDisplay}</td>` : ''}</tr>`;
+
+        tableHTML += `<tr><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${ch.name}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.standardChannelName}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.displayFrequency.toFixed(2)}</td><td class="px-6 py-4 whitespace-nowrap text-sm ${merClass}">${merContent}</td>${showDifferenceColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.minLevel.toFixed(2)}</td>` : ''}<td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">${ch.avgLevel.toFixed(2)}</td>${showDifferenceColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.maxLevel.toFixed(2)}</td>` : ''}${showDifferenceColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm ${differenceClass}">${ch.levelDifference.toFixed(2)}</td>` : ''}<td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${deviationClass}">${deviationText}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${compensationClass}">${compensationText}</td>${showMeasurementsColumn ? `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${ch.measurementsDisplay}</td>` : ''}</tr>`;
     });
 
     tableHTML += `</tbody></table>`;
