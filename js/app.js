@@ -311,6 +311,8 @@ function initMainPage() {
     // --- VIZUALIZÁCIÓS FUNKCIÓK ---
 
     function renderChart(processedData) {
+        const errorBarPlugin = { id: 'errorBarPlugin', afterDraw(chart) { if (totalFileCount <= 1) return; const { ctx, scales: { x, y } } = chart; ctx.save(); ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(220, 38, 38, 0.7)'; chart.data.datasets.forEach((dataset, i) => { if (dataset.type === 'line') return; const customData = dataset.customData; if (!customData) return; for (let j = 0; j < chart.getDatasetMeta(i).data.length; j++) { const bar = chart.getDatasetMeta(i).data[j]; const dataPoint = customData[j]; const xPos = bar.x; const yMin = y.getPixelForValue(dataPoint.minLevel); const yMax = y.getPixelForValue(dataPoint.maxLevel); const whiskerWidth = bar.width * 0.3; ctx.beginPath(); ctx.moveTo(xPos, yMin); ctx.lineTo(xPos, yMax); ctx.stroke(); ctx.beginPath(); ctx.moveTo(xPos - whiskerWidth / 2, yMax); ctx.lineTo(xPos + whiskerWidth / 2, yMax); ctx.stroke(); ctx.beginPath(); ctx.moveTo(xPos - whiskerWidth / 2, yMin); ctx.lineTo(xPos + whiskerWidth / 2, yMin); ctx.stroke(); } }); ctx.restore(); } };
+
         const ctx = document.getElementById('signalChart').getContext('2d');
         const tiltLegendContainer = document.getElementById('tilt-legend-container');
         const tiltLegendElement = document.getElementById('tilt-legend');

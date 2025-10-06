@@ -185,8 +185,6 @@ function processChannelData(allData, fileCount = 0, removeOutliers = false) {
     };
 }
 
-const errorBarPlugin = { id: 'errorBarPlugin', afterDraw(chart) { if (totalFileCount <= 1) return; const { ctx, scales: { x, y } } = chart; ctx.save(); ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(220, 38, 38, 0.7)'; chart.data.datasets.forEach((dataset, i) => { if (dataset.type === 'line') return; const customData = dataset.customData; if (!customData) return; for (let j = 0; j < chart.getDatasetMeta(i).data.length; j++) { const bar = chart.getDatasetMeta(i).data[j]; const dataPoint = customData[j]; const xPos = bar.x; const yMin = y.getPixelForValue(dataPoint.minLevel); const yMax = y.getPixelForValue(dataPoint.maxLevel); const whiskerWidth = bar.width * 0.3; ctx.beginPath(); ctx.moveTo(xPos, yMin); ctx.lineTo(xPos, yMax); ctx.stroke(); ctx.beginPath(); ctx.moveTo(xPos - whiskerWidth / 2, yMax); ctx.lineTo(xPos + whiskerWidth / 2, yMax); ctx.stroke(); ctx.beginPath(); ctx.moveTo(xPos - whiskerWidth / 2, yMin); ctx.lineTo(xPos + whiskerWidth / 2, yMin); ctx.stroke(); } }); ctx.restore(); } };
-
 // --- ROUTER ---
 const routes = {
     '/': { templateId: 'page-main', init: () => initMainPage() },
@@ -194,13 +192,9 @@ const routes = {
     '/help': { templateId: 'page-help', init: null },
 };
 
-const navigateTo = (path) => {
-    history.pushState(null, null, path);
-    router();
-};
-
 const router = async () => {
-    const path = window.location.pathname;
+    // A hash-ból nyerjük ki az útvonalat, eltávolítva a # karaktert.
+    const path = window.location.hash.substring(1) || '/';
     const view = routes[path] || routes['/']; // Alapértelmezett útvonal
 
     const template = document.getElementById(view.templateId);
@@ -231,14 +225,15 @@ const router = async () => {
     }
 };
 
-window.addEventListener('popstate', router);
+// Figyeljük a hash változását (pl. linkre kattintás, előre/vissza gombok)
+window.addEventListener('hashchange', router);
 
+// Az oldal betöltődésekor is futtassuk le a routert
 document.addEventListener('DOMContentLoaded', () => {
-    document.body.addEventListener('click', e => {
-        if (e.target.matches('[data-path]')) {
-            e.preventDefault();
-            navigateTo(e.target.getAttribute('data-path'));
-        }
-    });
-    router();
+    // Ha nincs hash, állítsuk be a gyökeret, hogy elinduljon a router
+    if (!window.location.hash) {
+        window.location.hash = '#/';
+    } else {
+        router();
+    }
 });
