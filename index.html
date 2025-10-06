@@ -44,138 +44,361 @@
             background-color: #9ca3af;
             cursor: not-allowed;
         }
+        /* Stílusok a Súgó oldalhoz */
+        .help-content h2 {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: 700; /* font-bold */
+            color: #111827; /* text-gray-900 */
+            margin-top: 2rem; /* mt-8 */
+            margin-bottom: 1rem; /* mb-4 */
+            border-bottom: 1px solid #e5e7eb; /* border-b border-gray-200 */
+            padding-bottom: 0.5rem; /* pb-2 */
+        }
+        .help-content h3 {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 600; /* font-semibold */
+            color: #1f2937; /* text-gray-800 */
+            margin-top: 1.5rem; /* mt-6 */
+            margin-bottom: 0.75rem; /* mb-3 */
+        }
+        .help-content h4 {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* font-semibold */
+            color: #374151; /* text-gray-700 */
+            margin-top: 1.25rem; /* mt-5 */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        .help-content p, .help-content ul, .help-content ol {
+            line-height: 1.75; /* leading-relaxed */
+            color: #4b5563; /* text-gray-600 */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+        .help-content ul, .help-content ol {
+            list-style-position: inside;
+            margin-left: 0.5rem; /* ml-2 */
+        }
+        .help-content li {
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        .help-content strong {
+            color: #111827; /* text-gray-900 */
+            font-weight: 600;
+        }
+        .help-content .code-inline {
+            background-color: #e5e7eb; /* bg-gray-200 */
+            color: #1f2937; /* text-gray-800 */
+            padding: 0.125rem 0.375rem; /* px-1.5 py-0.5 */
+            border-radius: 0.25rem; /* rounded */
+            font-family: monospace;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
     <div class="container mx-auto p-4 sm:p-6 lg:p-8">
         <div class="w-full bg-white rounded-2xl shadow-lg">
-            <div class="flex border-b border-gray-200">
-                <a href="index.html" class="px-4 py-2 text-sm font-medium text-gray-900 bg-gray-100 border-t border-l border-r border-gray-200 rounded-t-lg">
+            <nav class="flex border-b border-gray-200">
+                <a href="/" data-path="/" class="nav-link px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
                     Főoldal
                 </a>
-                <a href="compare.html" class="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <a href="/compare" data-path="/compare" class="nav-link px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
                     Összehasonlítás
                 </a>
-                <a href="setup.html" class="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
-                    Beállítás
-                </a>
-                <a href="help.html" class="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <a href="/help" data-path="/help" class="nav-link px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50">
                     Súgó
                 </a>
-            </div>
-            <div id="main-content" class="p-6 md:p-8">
-                <div class="text-center mb-8">
-                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Mérési Adatok Feldolgozása</h1>
-                    <p class="mt-2 text-lg text-gray-600">Töltse fel a mérőműszer XML fájljait a jelszintek elemzéséhez.</p>
-                </div>
-
-                <div class="flex flex-col items-center justify-center w-full mb-8">
-                    <label for="file-upload" class="action-button file-input-button">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                        </svg>
-                        Mérési fájlok kiválasztása (.XML)
-                    </label>
-                    <input id="file-upload" type="file" class="hidden" multiple accept=".xml,text/xml">
-                    <p id="file-info" class="mt-4 text-gray-500">Nincsenek fájlok kiválasztva.</p>
-                </div>
-
-                <div id="results-container" class="hidden">
-                    <div id="graph-section" class="mb-8 pb-6">
-                        <h2 class="text-2xl font-semibold text-center mb-4">Csatornák átlagos jelszintje és mérési tartománya</h2>
-                        
-                        <div class="flex justify-center items-center flex-wrap gap-x-6 gap-y-2 mb-4">
-                            <div class="flex items-center">
-                                <input type="checkbox" id="toggle-tilt-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                <label for="toggle-tilt-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Tilt ábrázolása</label>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="toggle-minmax-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                <label for="toggle-minmax-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Min/Max jelölése</label>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="toggle-outliers-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                <label for="toggle-outliers-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Szélsőséges értékek szűrése (&gt;30dBuV eltérés)</label>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="toggle-standard-scale-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                <label for="toggle-standard-scale-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Szabványos skála:</label>
-                                <input type="number" id="scale-min-input" value="75" class="ml-2 w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" disabled>
-                                <label for="scale-min-input" class="ml-1 mr-4 block text-sm text-gray-900">dBuV</label>
-                                 <div id="narrow-scale-container" class="flex items-center hidden">
-                                    <input type="checkbox" id="toggle-narrow-scale-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                    <label for="toggle-narrow-scale-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Szűkített (3dBuV)</label>
-                                </div>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="toggle-digital-compensation-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                <label for="toggle-digital-compensation-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Digitális jelszint kompenzáció (+3dBuV)</label>
-                            </div>
-                        </div>
-
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <canvas id="signalChart"></canvas>
-                        </div>
-                         <div class="flex justify-center flex-wrap mt-4 space-x-4 sm:space-x-6">
-                            <div class="flex items-center mb-2 sm:mb-0">
-                                <div class="w-4 h-4 rounded-full mr-2" style="background-color: rgba(79, 70, 229, 0.8);"></div>
-                                <span class="text-sm text-gray-600">Analóg csatorna</span>
-                            </div>
-                            <div class="flex items-center mb-2 sm:mb-0">
-                                <div class="w-4 h-4 rounded-full mr-2" style="background-color: rgba(34, 197, 94, 0.8);"></div>
-                                <span class="text-sm text-gray-600">DVB-C csatorna</span>
-                            </div>
-                            <div id="tilt-legend-container" class="flex items-center" style="display: none;">
-                                 <div class="w-5 h-0.5 mr-2" style="background-color: rgba(220, 38, 38, 1);"></div>
-                                 <span id="tilt-legend" class="text-sm text-gray-600 font-semibold"></span>
-                            </div>
-                            <div id="minmax-legend-container" class="flex items-center ml-4" style="display: none;">
-                                <div class="w-5 h-0.5 mr-2 border-t-2 border-dashed" style="border-color: rgba(0, 0, 0, 1);"></div>
-                                <span id="min-legend" class="text-sm text-gray-600 font-semibold mr-4"></span>
-                                <div class="w-5 h-0.5 mr-2 border-t-2 border-dashed" style="border-color: rgba(0, 0, 0, 1);"></div>
-                                <span id="max-legend" class="text-sm text-gray-600 font-semibold"></span>
-                           </div>
-                        </div>
-                    </div>
-                    <div id="table-section" class="mb-8">
-                        <h2 class="text-2xl font-semibold text-center mb-4">Részletes adatok</h2>
-                        <div id="resultsTable" class="overflow-x-auto"></div>
-                    </div>
-
-                    <div class="text-center border-t pt-8 mt-8">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 max-w-4xl mx-auto">
-                            <div>
-                                <label for="meresi-hely" class="block text-sm font-medium text-gray-700 text-left mb-1">Mérési hely (pl. Tűzoltóság)</label>
-                                <input type="text" id="meresi-hely" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Pl. Budapest, Kossuth Lajos utca 1.">
-                            </div>
-                            <div>
-                                <label for="megjegyzes" class="block text-sm font-medium text-gray-700 text-left mb-1">Megjegyzés (pl. Főőrség)</label>
-                                <input type="text" id="megjegyzes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Pl. 2. emelet, 3. lakás">
-                            </div>
-                        </div>
-                        <button id="save-pdf-button" class="action-button pdf-button">
-                            <svg id="pdf-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
-                            <span id="pdf-button-text">Mentés PDF-be</span>
-                        </button>
-                    </div>
-                </div>
-
-                 <div id="loader" class="hidden text-center">
-                    <svg class="animate-spin h-8 w-8 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <p class="mt-2 text-gray-600">Fájlok feldolgozása...</p>
-                </div>
-
-            </div>
+            </nav>
+            
+            <main id="router-outlet">
+                <!-- A dinamikus tartalom itt jelenik meg -->
+            </main>
         </div>
     </div>
 
+    <!-- Sablon a Főoldalhoz -->
+    <template id="page-main">
+        <div id="main-content" class="p-6 md:p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Mérési Adatok Feldolgozása</h1>
+                <p class="mt-2 text-lg text-gray-600">Töltse fel a mérőműszer XML fájljait a jelszintek elemzéséhez.</p>
+            </div>
+
+            <div id="drop-zone" class="flex flex-col items-center justify-center w-full mb-8 p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 transition-colors">
+                <label for="file-upload" class="action-button file-input-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Mérési fájlok kiválasztása (.XML)
+                </label>
+                <p class="mt-4 text-gray-500">vagy húzza ide a fájlokat</p>
+                <input id="file-upload" type="file" class="hidden" multiple accept=".xml,text/xml">
+                <p id="file-info" class="mt-2 text-gray-500">Nincsenek fájlok kiválasztva.</p>
+            </div>
+
+            <div id="results-container" class="hidden">
+                <div id="graph-section" class="mb-8 pb-6">
+                    <h2 class="text-2xl font-semibold text-center mb-4">Csatornák átlagos jelszintje és mérési tartománya</h2>
+                    
+                    <div class="flex justify-center items-center flex-wrap gap-x-6 gap-y-2 mb-4">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="toggle-tilt-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="toggle-tilt-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Tilt ábrázolása</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="toggle-minmax-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="toggle-minmax-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Min/Max jelölése</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="toggle-outliers-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="toggle-outliers-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Szélsőséges értékek szűrése (&gt;30dBuV eltérés)</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="toggle-standard-scale-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="toggle-standard-scale-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Szabványos skála:</label>
+                            <input type="number" id="scale-min-input" value="75" class="ml-2 w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" disabled>
+                            <label for="scale-min-input" class="ml-1 mr-4 block text-sm text-gray-900">dBuV</label>
+                             <div id="narrow-scale-container" class="flex items-center hidden">
+                                <input type="checkbox" id="toggle-narrow-scale-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                <label for="toggle-narrow-scale-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Szűkített (3dBuV)</label>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="toggle-digital-compensation-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="toggle-digital-compensation-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Digitális jelszint kompenzáció (+3dBuV)</label>
+                        </div>
+                        <div class="flex items-center">
+                            <label for="target-level-input" class="ml-2 block text-sm text-gray-900">Céljelszint:</label>
+                            <input type="number" id="target-level-input" value="75" class="ml-2 w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label for="target-level-input" class="ml-1 mr-4 block text-sm text-gray-900">dBuV</label>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <canvas id="signalChart"></canvas>
+                    </div>
+                     <div class="flex justify-center flex-wrap mt-4 space-x-4 sm:space-x-6">
+                        <div class="flex items-center mb-2 sm:mb-0">
+                            <div class="w-4 h-4 rounded-full mr-2" style="background-color: rgba(79, 70, 229, 0.8);"></div>
+                            <span class="text-sm text-gray-600">Analóg csatorna</span>
+                        </div>
+                        <div class="flex items-center mb-2 sm:mb-0">
+                            <div class="w-4 h-4 rounded-full mr-2" style="background-color: rgba(34, 197, 94, 0.8);"></div>
+                            <span class="text-sm text-gray-600">DVB-C csatorna</span>
+                        </div>
+                        <div id="tilt-legend-container" class="flex items-center" style="display: none;">
+                             <div class="w-5 h-0.5 mr-2" style="background-color: rgba(220, 38, 38, 1);"></div>
+                             <span id="tilt-legend" class="text-sm text-gray-600 font-semibold"></span>
+                        </div>
+                        <div id="minmax-legend-container" class="flex items-center ml-4" style="display: none;">
+                            <div class="w-5 h-0.5 mr-2 border-t-2 border-dashed" style="border-color: rgba(0, 0, 0, 1);"></div>
+                            <span id="min-legend" class="text-sm text-gray-600 font-semibold mr-4"></span>
+                            <div class="w-5 h-0.5 mr-2 border-t-2 border-dashed" style="border-color: rgba(0, 0, 0, 1);"></div>
+                            <span id="max-legend" class="text-sm text-gray-600 font-semibold"></span>
+                       </div>
+                    </div>
+                </div>
+                <div id="table-section" class="mb-8">
+                    <h2 class="text-2xl font-semibold text-center mb-4">Részletes adatok</h2>
+                    <div id="resultsTable" class="overflow-x-auto"></div>
+                </div>
+
+                <div class="text-center border-t pt-8 mt-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 max-w-4xl mx-auto">
+                        <div>
+                            <label for="meresi-hely" class="block text-sm font-medium text-gray-700 text-left mb-1">Mérési hely (pl. Tűzoltóság)</label>
+                            <input type="text" id="meresi-hely" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Pl. Budapest, Kossuth Lajos utca 1.">
+                        </div>
+                        <div>
+                            <label for="megjegyzes" class="block text-sm font-medium text-gray-700 text-left mb-1">Megjegyzés (pl. Főőrség)</label>
+                            <input type="text" id="megjegyzes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Pl. 2. emelet, 3. lakás">
+                        </div>
+                    </div>
+                    <button id="save-pdf-button" class="action-button pdf-button">
+                        <svg id="pdf-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span id="pdf-button-text">Mentés PDF-be</span>
+                    </button>
+                </div>
+            </div>
+
+             <div id="loader" class="hidden text-center p-8">
+                <svg class="animate-spin h-8 w-8 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="mt-2 text-gray-600">Fájlok feldolgozása...</p>
+            </div>
+        </div>
+    </template>
+
+    <!-- Sablon az Összehasonlítás oldalhoz -->
+    <template id="page-compare">
+        <div id="main-content" class="p-6 md:p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Mérési Adatok Összehasonlítása</h1>
+                <p class="mt-2 text-lg text-gray-600">Töltse fel a "beállítás előtti" és "beállítás utáni" mérési fájlokat.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div id="drop-zone-before" class="flex flex-col items-center justify-center w-full p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 transition-colors">
+                    <label for="file-upload-before" class="action-button file-input-button w-full justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        "Előtte" fájlok (.XML)
+                    </label>
+                    <p class="mt-4 text-gray-500">vagy húzza ide a fájlokat</p>
+                    <input id="file-upload-before" type="file" class="hidden" multiple accept=".xml,text/xml">
+                    <p id="file-info-before" class="mt-2 text-gray-500">Nincsenek fájlok kiválasztva.</p>
+                </div>
+                <div id="drop-zone-after" class="flex flex-col items-center justify-center w-full p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 transition-colors">
+                    <label for="file-upload-after" class="action-button file-input-button w-full justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        "Utána" fájlok (.XML)
+                    </label>
+                    <p class="mt-4 text-gray-500">vagy húzza ide a fájlokat</p>
+                    <input id="file-upload-after" type="file" class="hidden" multiple accept=".xml,text/xml">
+                    <p id="file-info-after" class="mt-2 text-gray-500">Nincsenek fájlok kiválasztva.</p>
+                </div>
+            </div>
+
+            <div class="text-center mb-8">
+                 <button id="process-button" class="action-button bg-green-600 hover:bg-green-700">
+                    Feldolgozás és összehasonlítás
+                </button>
+            </div>
+
+            <div id="results-container" class="hidden">
+                <div id="graph-section" class="mb-8 pb-6">
+                    <h2 class="text-2xl font-semibold text-center mb-4">Csatornák átlagos jelszintje és mérési tartománya</h2>
+                    <div class="flex justify-center items-center flex-wrap gap-x-6 gap-y-2 mb-4">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="toggle-tilt-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="toggle-tilt-checkbox" class="ml-2 block text-sm text-gray-900 cursor-pointer">Tilt ábrázolása</label>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <canvas id="signalChart"></canvas>
+                    </div>
+                </div>
+                <div id="table-section" class="mb-8">
+                    <h2 class="text-2xl font-semibold text-center mb-4">Részletes adatok</h2>
+                    <div id="resultsTable" class="overflow-x-auto"></div>
+                </div>
+
+                <div class="text-center border-t pt-8 mt-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 max-w-4xl mx-auto">
+                        <div>
+                            <label for="meresi-hely" class="block text-sm font-medium text-gray-700 text-left mb-1">Mérési hely (pl. Tűzoltóság)</label>
+                            <input type="text" id="meresi-hely" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Pl. Budapest, Kossuth Lajos utca 1.">
+                        </div>
+                        <div>
+                            <label for="megjegyzes" class="block text-sm font-medium text-gray-700 text-left mb-1">Megjegyzés (pl. Főőrség)</label>
+                            <input type="text" id="megjegyzes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Pl. 2. emelet, 3. lakás">
+                        </div>
+                    </div>
+                    <button id="save-pdf-button" class="action-button pdf-button">
+                        <svg id="pdf-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span id="pdf-button-text">Mentés PDF-be</span>
+                    </button>
+                </div>
+            </div>
+
+             <div id="loader" class="hidden text-center p-8">
+                <svg class="animate-spin h-8 w-8 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="mt-2 text-gray-600">Fájlok feldolgozása...</p>
+            </div>
+        </div>
+    </template>
+
+    <!-- Sablon a Súgó oldalhoz -->
+    <template id="page-help">
+        <div id="main-content" class="p-6 md:p-10 help-content">
+            <h2 class="!mt-0">XML Jelszint Analizátor - Használati Útmutató</h2>
+
+            <h3>Bevezetés</h3>
+            <p>
+                Ez az online eszköz a Promax Ranger típusú mérőműszerekből exportált <span class="code-inline">.xml</span> formátumú mérési fájlok feldolgozására és vizuális elemzésére szolgál.
+            </p>
+            <p>
+                Az alkalmazás egy egységes, füles felületen keresztül kínál különböző funkciókat:
+            </p>
+            <ul>
+                <li><strong>Főoldal:</strong> Egyedi mérések részletes, statisztikai alapú elemzéséhez.</li>
+                <li><strong>Összehasonlítás:</strong> Két mérési adathalmaz (pl. beállítás előtt és után) közötti különbségek vizsgálatához.</li>
+            </ul>
+
+            <!-- Főoldal -->
+            <h2>Főoldal: Részletes Elemzés</h2>
+            <p>A főoldal egy vagy több mérési pont részletes, statisztikai alapú elemzésére szolgál.</p>
+
+            <h4>1. Fájlok feltöltése</h4>
+            <ol class="list-decimal">
+                <li>Kattintson a <strong>"Mérési fájlok kiválasztása (.XML)"</strong> gombra, vagy egyszerűen húzza a fájlokat a szaggatott vonallal jelölt területre.</li>
+                <li>A felugró ablakban válassza ki az összes <span class="code-inline">.xml</span> fájlt, amelyet elemezni szeretne. Több fájl egyidejű kijelölésével a program összevont elemzést készít.</li>
+                <li>A kiválasztás után a program automatikusan feldolgozza a fájlokat, és megjeleníti az eredményeket.</li>
+            </ol>
+
+            <h4>2. A Grafikon Értelmezése</h4>
+            <p>A diagram a csatornák átlagos jelszintjét mutatja oszlopdiagram formájában, frekvencia szerint növekvő sorrendben.</p>
+            <ul>
+                <li><strong>Oszlopok színei:</strong> A színek a csatorna típusát jelölik (Analóg vagy DVB-C).</li>
+                <li><strong>Hibasávok (piros vonalak):</strong> Ha kettő vagy több fájlt tölt fel, a piros "T" alakú hibasávok jelölik a mérési tartományt. A vonal alsó vége a mért <strong>minimális</strong>, a felső vége pedig a <strong>maximális</strong> jelszintet mutatja az adott csatornán.</li>
+            </ul>
+
+            <h4>3. Vezérlőelemek (Grafikon felett)</h4>
+            <ul>
+                <li><strong>Tilt ábrázolása:</strong> Bejelölve megjelenít egy piros egyenest, amely az első és az utolsó csatorna átlagos jelszintjét köti össze. A jelmagyarázatban megjelenik a "Tilt" értéke, ami a hálózat frekvenciafüggő csillapításáról ad képet.</li>
+                <li><strong>Min/Max jelölése:</strong> Bejelölve a grafikonon megjelenik két fekete, vízszintes, szaggatott vonal, amelyek a csatornák átlagos jelszintjeinek minimumát és maximumát jelölik. A jelmagyarázatban ezen értékek is megjelennek, segítve a jelszint-tartomány gyors áttekintését.</li>
+                <li><strong>Szélsőséges értékek szűrése:</strong> Eltávolítja azokat a csatornákat, amelyek átlagos jelszintje több mint 30 dBuV-vel tér el a teljes átlagtól. Ez segít a kiugró, valószínűleg hibás mérések figyelmen kívül hagyásában.</li>
+                <li><strong>Szabványos skála:</strong> Rögzíti a grafikon Y tengelyét egy fix tartományra, ami megkönnyíti a különböző mérések vizuális összehasonlítását. A kezdőérték megadása után egy 6 dBuV-s tartományt ábrázol. A "Szűkített (3dBuV)" opcióval ez a tartomány 3 dBuV-re csökkenthető a finomabb részletek vizsgálatához.</li>
+                <li><strong>Digitális jelszint kompenzáció:</strong> Bejelölve +3 dBuV-t ad a digitális csatornák jelszintjéhez (átlag, min és max), hogy azok vizuálisan jobban összehasonlíthatók legyenek az analóg csatornák csúcsértékével.</li>
+                <li><strong>Céljelszint:</strong> A grafikon feletti beviteli mezőbe beírva a program kiszámítja, hogy az egyes csatornák jelszintjét mennyivel kell módosítani a céljelszint eléréséhez. Az eredmény a táblázat "Kompenzáció" oszlopában jelenik meg.</li>
+            </ul>
+
+            <h4>4. A Részletes Adatok Táblázata</h4>
+            <p>A táblázat soronként, részletesen tartalmazza a feldolgozott csatornák adatait.</p>
+            <ul>
+                <li><strong>Átlag MER (dB):</strong> Digitális csatornák esetén a Modulációs Hibaarány (MER) átlagértéke. A 40 dB alatti értékek narancssárgával vannak kiemelve.</li>
+                <li><strong>Különbség (dBuV):</strong> A minimális és maximális mért jelszint közötti különbség. A legnagyobb különbség pirossal van kiemelve.</li>
+                <li><strong>Eltérés az átlagtól (dB):</strong> Megmutatja, hogy az adott csatorna jelszintje mennyivel tér el az összes csatorna átlagától. A pozitív értékek zölddel, a negatív értékek pirossal jelennek meg.</li>
+                <li><strong>Kompenzáció (dB):</strong> Ez az érték mutatja meg, hogy az adott csatorna jelszintjét mennyivel kell módosítani (csillapítani vagy erősíteni) a megadott céljelszint eléréséhez. A <strong>pozitív (zöld)</strong> érték növelést, a <strong>negatív (piros)</strong> érték csökkentést jelent.</li>
+            </ul>
+
+            <!-- Összehasonlító nézet -->
+            <h2>Összehasonlító Nézet</h2>
+            <p>Ez a nézet két adathalmaz – jellemzően egy "beállítás előtti" és egy "beállítás utáni" állapot – összevetésére szolgál.</p>
+            <h4>1. Fájlok feltöltése</h4>
+            <p>Az oldalon két külön fájlfeltöltő található: "Előtte" és "Utána". A fájlokat a megfelelő zónába húzva is feltöltheti.</p>
+            <h4>2. Az Összehasonlító Grafikon és Táblázat</h4>
+            <p>A grafikon és a táblázat egyaránt az "Előtte" és "Utána" állapotokat jeleníti meg, lehetővé téve a változások egyszerű leolvasását.</p>
+
+            <!-- Számítási metodika -->
+            <h2>Számítási Metodika</h2>
+            <ul>
+                <li>
+                    <strong>Átlagszint szűrése:</strong> A Főoldalon a program a feltöltött fájlok számától függően szűri a kiugró értékeket a pontosabb átlagszámítás érdekében (1-3 fájl: nincs szűrés; 4-6 fájl: min/max eldobása; 7+ fájl: 2 min/max eldobása). Az Összehasonlító nézet minden adatot felhasznál.
+                </li>
+                <li>
+                    <strong>Középfrekvencia számítása:</strong> Analóg csatornák esetén a program korrigálja a mért középfrekvenciát a szabványos képvivő frekvenciára.
+                </li>
+            </ul>
+
+            <h3>PDF Exportálás</h3>
+            <p>A <strong>Főoldalon</strong> és az <strong>Összehasonlító nézetben</strong> lehetőség van egy formázott PDF jegyzőkönyv generálására.</p>
+        </div>
+    </template>
+
     <script src="js/main.js"></script>
-    <script src="js/index.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>

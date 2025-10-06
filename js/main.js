@@ -1,5 +1,4 @@
-
-// --- SEGÉDFUNKCIÓK ---
+// --- KÖZÖS SEGÉDFUNKCIÓK ---
 
 function readFileAsText(file) {
     return new Promise((resolve, reject) => {
@@ -185,3 +184,61 @@ function processChannelData(allData, fileCount = 0, removeOutliers = false) {
         }
     };
 }
+
+const errorBarPlugin = { id: 'errorBarPlugin', afterDraw(chart) { if (totalFileCount <= 1) return; const { ctx, scales: { x, y } } = chart; ctx.save(); ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(220, 38, 38, 0.7)'; chart.data.datasets.forEach((dataset, i) => { if (dataset.type === 'line') return; const customData = dataset.customData; if (!customData) return; for (let j = 0; j < chart.getDatasetMeta(i).data.length; j++) { const bar = chart.getDatasetMeta(i).data[j]; const dataPoint = customData[j]; const xPos = bar.x; const yMin = y.getPixelForValue(dataPoint.minLevel); const yMax = y.getPixelForValue(dataPoint.maxLevel); const whiskerWidth = bar.width * 0.3; ctx.beginPath(); ctx.moveTo(xPos, yMin); ctx.lineTo(xPos, yMax); ctx.stroke(); ctx.beginPath(); ctx.moveTo(xPos - whiskerWidth / 2, yMax); ctx.lineTo(xPos + whiskerWidth / 2, yMax); ctx.stroke(); ctx.beginPath(); ctx.moveTo(xPos - whiskerWidth / 2, yMin); ctx.lineTo(xPos + whiskerWidth / 2, yMin); ctx.stroke(); } }); ctx.restore(); } };
+
+// --- ROUTER ---
+const routes = {
+    '/': { templateId: 'page-main', init: () => initMainPage() },
+    '/compare': { templateId: 'page-compare', init: () => initComparePage() },
+    '/help': { templateId: 'page-help', init: null },
+};
+
+const navigateTo = (path) => {
+    history.pushState(null, null, path);
+    router();
+};
+
+const router = async () => {
+    const path = window.location.pathname;
+    const view = routes[path] || routes['/']; // Alapértelmezett útvonal
+
+    const template = document.getElementById(view.templateId);
+    const routerOutlet = document.getElementById('router-outlet');
+
+    if (template && routerOutlet) {
+        routerOutlet.innerHTML = ''; // Töröljük a régi tartalmat
+        const clone = template.content.cloneNode(true);
+        routerOutlet.appendChild(clone);
+
+        // Aktív link stílusának beállítása
+        document.querySelectorAll('.nav-link').forEach(link => {
+            if (link.getAttribute('data-path') === path) {
+                link.classList.add('text-gray-900', 'bg-gray-100');
+                link.classList.remove('text-gray-500');
+            } else {
+                link.classList.add('text-gray-500');
+                link.classList.remove('text-gray-900', 'bg-gray-100');
+            }
+        });
+
+        // Oldal-specifikus JS inicializálása
+        if (view.init) {
+            view.init();
+        }
+    } else {
+        console.error(`Template or router outlet not found for path: ${path}`);
+    }
+};
+
+window.addEventListener('popstate', router);
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.body.addEventListener('click', e => {
+        if (e.target.matches('[data-path]')) {
+            e.preventDefault();
+            navigateTo(e.target.getAttribute('data-path'));
+        }
+    });
+    router();
+});
